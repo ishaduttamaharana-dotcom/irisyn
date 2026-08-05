@@ -2,7 +2,12 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: digital-twin-backend-config
+  labels:
+    app: digital-twin-backend
+    part-of: digital-twin
 data:
   DB_URL: "jdbc:postgresql://digital-twin-db:5432/digital_twin"
-  CORS_ORIGINS: "https://digital-twin-frontend-<namespace>.apps.<cluster-domain>"
+  DB_KIND: "postgresql"
+  CORS_ORIGINS: "https://digital-twin-frontend-ishaduttamaharana-dev.apps.rm1.0a51.p1.openshiftapps.com"
   JWT_ISSUER: "https://digital-twin.example.com"
+  HIBERNATE_LOG_SQL: "false"

@@ -2,6 +2,9 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: digital-twin-frontend-config
+  labels:
+    app: digital-twin-frontend
+    part-of: digital-twin
 data:
-  VITE_API_BASE_URL: "https://digital-twin-backend-<namespace>.apps.<cluster-domain>/api"
-  VITE_WS_URL: "wss://digital-twin-backend-<namespace>.apps.<cluster-domain>/ws"
+  VITE_API_BASE_URL: "https://digital-twin-backend-ishaduttamaharana-dev.apps.rm1.0a51.p1.openshiftapps.com/api"
+  VITE_WS_URL: "wss://digital-twin-backend-ishaduttamaharana-dev.apps.rm1.0a51.p1.openshiftapps.com/ws"

@@ -6,7 +6,7 @@ metadata:
     app: digital-twin-frontend
     part-of: digital-twin
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: digital-twin-frontend
@@ -17,13 +17,10 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: image-registry.openshift-image-registry.svc:5000/digital-twin/digital-twin-frontend:latest
+          image: image-registry.openshift-image-registry.svc:5000/ishaduttamaharana-dev/digital-twin-frontend:latest
           ports:
             - containerPort: 8080
               name: http
-          envFrom:
-            - configMapRef:
-                name: digital-twin-frontend-config
           readinessProbe:
             httpGet:
               path: /
@@ -38,8 +35,8 @@ spec:
             periodSeconds: 20
           resources:
             requests:
-              cpu: "100m"
-              memory: "128Mi"
+              cpu: "50m"
+              memory: "64Mi"
             limits:
-              cpu: "500m"
-              memory: "256Mi"
+              cpu: "200m"
+              memory: "128Mi"

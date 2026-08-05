@@ -1,11 +1,12 @@
-# Suitable for dev/test only. For production, use a managed PostgreSQL
-# service or the PostgreSQL Operator instead of a raw Deployment.
+# PostgreSQL 16 for dev/sandbox deployment
+# Using emptyDir — data is ephemeral but avoids EFS permission issues
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: digital-twin-db
   labels:
     app: digital-twin-db
+    part-of: digital-twin
 spec:
   replicas: 1
   strategy:
@@ -20,19 +21,34 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: registry.redhat.io/rhel9/postgresql-16:latest
+          image: docker.io/library/postgres:16
           ports:
             - containerPort: 5432
-          envFrom:
-            - secretRef:
-                name: digital-twin-backend-secret
           env:
-            - name: POSTGRESQL_DATABASE
+            - name: POSTGRES_DB
               value: digital_twin
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: digital-twin-backend-secret
+                  key: DB_USERNAME
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: digital-twin-backend-secret
+                  key: DB_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           volumeMounts:
             - name: db-data
-              mountPath: /var/lib/pgsql/data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
       volumes:
         - name: db-data
-          persistentVolumeClaim:
-            claimName: digital-twin-db-data
+          emptyDir: {}

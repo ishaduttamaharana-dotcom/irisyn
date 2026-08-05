@@ -10,6 +10,7 @@ backend/target/
 # Downloaded tools (not part of project source)
 apache-maven-3.9.9/
 java-1.8.0-openjdk-*/
+oc.exe
 
 # Env
 .env
