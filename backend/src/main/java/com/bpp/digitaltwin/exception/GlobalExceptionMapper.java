@@ -23,6 +23,12 @@ public class GlobalExceptionMapper implements ExceptionMapper<Throwable> {
         if (exception instanceof ConstraintViolationException validationException) {
             return build(Response.Status.BAD_REQUEST, validationException.getMessage());
         }
+        if (exception instanceof jakarta.ws.rs.WebApplicationException webAppException) {
+            int statusCode = webAppException.getResponse().getStatus();
+            Response.Status status = Response.Status.fromStatusCode(statusCode);
+            String msg = webAppException.getMessage();
+            return build(status != null ? status : Response.Status.INTERNAL_SERVER_ERROR, msg != null ? msg : "Request error");
+        }
         LOG.error("Unhandled exception", exception);
         return build(Response.Status.INTERNAL_SERVER_ERROR, "An unexpected error occurred");
     }

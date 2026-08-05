@@ -1,6 +1,12 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
+const rawUrl = import.meta.env.VITE_API_BASE_URL ?? '/api';
+const BASE_URL =
+  typeof window !== 'undefined' &&
+  window.location.protocol === 'https:' &&
+  rawUrl.includes('localhost')
+    ? '/api'
+    : rawUrl;
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: BASE_URL,
