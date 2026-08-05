@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: digital-twin-backend
+  labels:
+    app: digital-twin-backend
+spec:
+  selector:
+    app: digital-twin-backend
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

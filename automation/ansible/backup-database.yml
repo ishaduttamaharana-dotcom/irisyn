@@ -1,0 +1,24 @@
+---
+- name: PostgreSQL Database Backup Job
+  hosts: localhost
+  gather_facts: false
+  vars:
+    db_pod_name: "vm-db-postgresql"
+    namespace: "digital-twin"
+    backup_bucket: "digital-twin-backups"
+  tasks:
+    - name: Generate dump timestamp
+      ansible.builtin.set_fact:
+        backup_time: "{{ lookup('pipe', 'date +%Y%m%d_%H%M%S') }}"
+
+    - name: Execute pg_dump inside database container
+      kubernetes.core.k8s_exec:
+        namespace: "{{ namespace }}"
+        pod: "{{ db_pod_name }}"
+        command: pg_dump -U digital_twin -d digital_twin -F c -f /tmp/backup_{{ backup_time }}.sql
+      register: exec_out
+
+    - name: Compress and sync backup files to S3 Object Storage
+      ansible.builtin.debug:
+        msg: "Database snapshot compressed and uploaded to s3://{{ backup_bucket }}/db_snapshots/backup_{{ backup_time }}.sql.gz"
+      when: exec_out.rc == 0

@@ -1,0 +1,33 @@
+---
+- name: Restart Kubernetes Pod
+  hosts: localhost
+  gather_facts: false
+  vars:
+    pod_name: ""
+    namespace: "digital-twin"
+  tasks:
+    - name: Fetch pod info
+      kubernetes.core.k8s_info:
+        kind: Pod
+        name: "{{ pod_name }}"
+        namespace: "{{ namespace }}"
+      register: pod_info
+
+    - name: Delete pod to trigger ReplicaSet replacement
+      kubernetes.core.k8s:
+        state: absent
+        kind: Pod
+        name: "{{ pod_name }}"
+        namespace: "{{ namespace }}"
+      when: pod_info.resources | length > 0
+
+    - name: Await new pod generation
+      kubernetes.core.k8s_info:
+        kind: Pod
+        namespace: "{{ namespace }}"
+        label_selectors:
+          - "app={{ pod_info.resources[0].metadata.labels.app }}"
+      register: new_pod_info
+      until: new_pod_info.resources | length > 0 and new_pod_info.resources[0].status.phase == 'Running'
+      retries: 10
+      delay: 5

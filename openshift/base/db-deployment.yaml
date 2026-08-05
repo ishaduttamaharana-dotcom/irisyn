@@ -1,0 +1,38 @@
+# Suitable for dev/test only. For production, use a managed PostgreSQL
+# service or the PostgreSQL Operator instead of a raw Deployment.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: digital-twin-db
+  labels:
+    app: digital-twin-db
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: digital-twin-db
+  template:
+    metadata:
+      labels:
+        app: digital-twin-db
+    spec:
+      containers:
+        - name: postgres
+          image: registry.redhat.io/rhel9/postgresql-16:latest
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - secretRef:
+                name: digital-twin-backend-secret
+          env:
+            - name: POSTGRESQL_DATABASE
+              value: digital_twin
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/pgsql/data
+      volumes:
+        - name: db-data
+          persistentVolumeClaim:
+            claimName: digital-twin-db-data

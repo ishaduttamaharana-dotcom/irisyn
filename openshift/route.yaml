@@ -1,0 +1,17 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: digital-twin-backend
+  namespace: digital-twin
+  labels:
+    app: digital-twin-backend
+spec:
+  to:
+    kind: Service
+    name: digital-twin-backend
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

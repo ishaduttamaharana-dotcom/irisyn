@@ -1,0 +1,28 @@
+---
+- name: Scale Deployment Replicas
+  hosts: localhost
+  gather_facts: false
+  vars:
+    deployment_name: ""
+    namespace: "digital-twin"
+    replicas: 3
+  tasks:
+    - name: Apply scale parameter to Deployment
+      kubernetes.core.k8s:
+        state: patched
+        kind: Deployment
+        name: "{{ deployment_name }}"
+        namespace: "{{ namespace }}"
+        definition:
+          spec:
+            replicas: "{{ replicas | int }}"
+
+    - name: Verify pod rollout status
+      kubernetes.core.k8s_info:
+        kind: Deployment
+        name: "{{ deployment_name }}"
+        namespace: "{{ namespace }}"
+      register: deploy_info
+      until: deploy_info.resources[0].status.readyReplicas | default(0) == replicas | int
+      retries: 10
+      delay: 5

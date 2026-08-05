@@ -1,0 +1,28 @@
+# Node
+node_modules/
+frontend/dist/
+
+# Java / Maven
+backend/target/
+*.jar
+*.war
+
+# Downloaded tools (not part of project source)
+apache-maven-3.9.9/
+java-1.8.0-openjdk-*/
+
+# Env
+.env
+*.local
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+tsconfig.tsbuildinfo

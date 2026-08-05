@@ -1,0 +1,15 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: digital-twin-frontend
+  labels:
+    app: digital-twin-frontend
+spec:
+  to:
+    kind: Service
+    name: digital-twin-frontend
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

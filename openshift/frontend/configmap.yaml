@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: digital-twin-frontend-config
+data:
+  VITE_API_BASE_URL: "https://digital-twin-backend-<namespace>.apps.<cluster-domain>/api"
+  VITE_WS_URL: "wss://digital-twin-backend-<namespace>.apps.<cluster-domain>/ws"

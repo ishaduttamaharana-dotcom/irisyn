@@ -1,0 +1,49 @@
+---
+- name: Restart Virtual Machine via OpenShift Virtualization
+  hosts: localhost
+  gather_facts: false
+  vars:
+    vm_name: ""
+    namespace: "digital-twin"
+  tasks:
+    - name: Fetch VM status
+      kubernetes.core.k8s_info:
+        api_version: kubevirt.io/v1
+        kind: VirtualMachine
+        name: "{{ vm_name }}"
+        namespace: "{{ namespace }}"
+      register: vm_info
+
+    - name: Stop VM instance
+      kubernetes.core.k8s:
+        state: patched
+        api_version: kubevirt.io/v1
+        kind: VirtualMachine
+        name: "{{ vm_name }}"
+        namespace: "{{ namespace }}"
+        definition:
+          spec:
+            running: false
+      when: vm_info.resources[0].spec.running | default(false)
+
+    - name: Await stop status
+      kubernetes.core.k8s_info:
+        api_version: kubevirt.io/v1
+        kind: VirtualMachineInstance
+        name: "{{ vm_name }}"
+        namespace: "{{ namespace }}"
+      register: vmi_info
+      until: vmi_info.resources | length == 0
+      retries: 12
+      delay: 5
+
+    - name: Start VM instance
+      kubernetes.core.k8s:
+        state: patched
+        api_version: kubevirt.io/v1
+        kind: VirtualMachine
+        name: "{{ vm_name }}"
+        namespace: "{{ namespace }}"
+        definition:
+          spec:
+            running: true

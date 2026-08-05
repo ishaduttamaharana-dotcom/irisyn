@@ -1,0 +1,26 @@
+---
+- name: Rollout Restart Service Deployment
+  hosts: localhost
+  gather_facts: false
+  vars:
+    service_name: ""
+    namespace: "digital-twin"
+  tasks:
+    - name: Trigger rollout restart by patching annotation
+      kubernetes.core.k8s:
+        state: patched
+        kind: Deployment
+        name: "{{ service_name }}"
+        namespace: "{{ namespace }}"
+        definition:
+          spec:
+            template:
+              metadata:
+                annotations:
+                  kubectl.kubernetes.io/restartedAt: "{{ ansible_date_time.iso8601 }}"
+
+    - name: Monitor rollout progress
+      ansible.builtin.command: >
+        oc rollout status deployment/{{ service_name }} -n {{ namespace }}
+      register: rollout_status
+      changed_when: false

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: digital-twin-backend-config
+data:
+  DB_URL: "jdbc:postgresql://digital-twin-db:5432/digital_twin"
+  CORS_ORIGINS: "https://digital-twin-frontend-<namespace>.apps.<cluster-domain>"
+  JWT_ISSUER: "https://digital-twin.example.com"

@@ -1,0 +1,26 @@
+---
+- name: Disk Space Cleanup & Log Pruning
+  hosts: hypervisors
+  gather_facts: false
+  tasks:
+    - name: Inspect current disk metrics
+      ansible.builtin.command: df -h /var/log
+      register: disk_stats
+      changed_when: false
+
+    - name: Prune old container logs
+      ansible.builtin.find:
+        paths: /var/log/containers
+        age: 7d
+        patterns: "*.log"
+      register: log_files
+
+    - name: Delete identified log files
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ log_files.files }}"
+
+    - name: Clear journald audit logs older than 2 days
+      ansible.builtin.command: journalctl --vacuum-time=2d
+      register: journal_cleanup

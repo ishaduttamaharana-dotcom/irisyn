@@ -1,0 +1,6 @@
+{
+  "title": "Digital Twin - Cluster Overview (placeholder)",
+  "schemaVersion": 39,
+  "panels": [],
+  "__note": "Placeholder dashboard. Panels for CPU/RAM/disk/network per node and alert rate will be added once real metrics are collected."
+}

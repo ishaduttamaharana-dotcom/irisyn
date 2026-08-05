@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: digital-twin-backend
+  labels:
+    app: digital-twin-backend
+    part-of: digital-twin
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: digital-twin-backend
+  template:
+    metadata:
+      labels:
+        app: digital-twin-backend
+    spec:
+      containers:
+        - name: backend
+          image: image-registry.openshift-image-registry.svc:5000/digital-twin/digital-twin-backend:latest
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: digital-twin-backend-config
+            - secretRef:
+                name: digital-twin-backend-secret
+          readinessProbe:
+            httpGet:
+              path: /api/health/ready
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /api/health/live
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
