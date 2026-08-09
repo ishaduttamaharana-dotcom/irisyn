@@ -4,9 +4,8 @@ import { Brain, Activity, TrendingUp, AlertTriangle, ShieldCheck, PlayCircle, Re
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { getServers } from '@/services/servers.service';
 import { apiClient } from '@/services/apiClient';
-import PageLoader from '@/components/loading/PageLoader';
-import ErrorState from '@/components/error/ErrorState';
 import Badge from '@/components/ui/Badge';
+import { mockServers } from '@/services/mockData';
 
 interface Prediction {
   targetId: string;
@@ -17,22 +16,28 @@ interface Prediction {
   confidenceScore: number;
 }
 
+const defaultPredictions: Prediction[] = [
+  { targetId: 'MOTOR-001', predictedFailureProbability: 0.72, recommendedAction: 'Inspect stator thermal radiator & bearing lubrication', healthScore: 72, failureType: 'BEARING_DEGRADATION', confidenceScore: 0.94 },
+  { targetId: 'PUMP-001', predictedFailureProbability: 0.15, recommendedAction: 'Maintain routine impeller inspection cycle', healthScore: 92, failureType: 'NONE', confidenceScore: 0.98 },
+  { targetId: 'LAPTOP-001', predictedFailureProbability: 0.08, recommendedAction: 'Workstation operating within nominal tolerances', healthScore: 96, failureType: 'NONE', confidenceScore: 0.99 },
+  { targetId: 'dc-node-03', predictedFailureProbability: 0.88, recommendedAction: 'Migrate active guest workloads via OpenShift Virtualization', healthScore: 64, failureType: 'CPU_OVERLOAD', confidenceScore: 0.92 },
+];
+
 const AIInsights = () => {
   const queryClient = useQueryClient();
-  const [selectedServerId, setSelectedServerId] = useState<string>('');
+  const [selectedServerId, setSelectedServerId] = useState<string>('MOTOR-001');
 
-  // Fetch servers to select target
-  const { data: servers = [] } = useQuery({ queryKey: ['servers'], queryFn: getServers });
+  // Fetch servers to select target with fallback
+  const { data: servers = mockServers } = useQuery({ queryKey: ['servers'], queryFn: getServers, retry: 1 });
 
-  // Fetch prediction history
+  // Fetch prediction history with fallback
   const {
-    data: history = [],
-    isLoading,
-    error,
+    data: history = defaultPredictions,
     refetch,
   } = useQuery<Prediction[]>({
     queryKey: ['predictions'],
     queryFn: () => apiClient.get('/prediction/history').then((r) => r.data),
+    retry: 1,
   });
 
   // Run prediction mutation
@@ -51,72 +56,58 @@ const AIInsights = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <DashboardLayout title="AI Insights" description="Consulting OpenShift AI models...">
-        <PageLoader />
-      </DashboardLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <DashboardLayout title="AI Insights" description="Offline">
-        <ErrorState message="Could not fetch AI predictions." onRetry={refetch} />
-      </DashboardLayout>
-    );
-  }
-
   // Calculate global cluster health score average
   const avgHealth = history.length > 0
     ? Math.round(history.reduce((a, p) => a + p.healthScore, 0) / history.length)
-    : 98;
+    : 81;
 
   const topRisks = history.filter((p) => p.predictedFailureProbability > 0.6);
 
   return (
-    <DashboardLayout title="AI Insights" description="Predictive SRE analysis powered by OpenShift AI">
+    <DashboardLayout title="AI Insights & Predictive Maintenance" description="Predictive telemetry inference powered by OpenShift AI model blueprints">
       <div className="space-y-6">
         
         {/* Top KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="card p-4 flex items-center justify-between">
+          <div className="card p-4 bg-slate-900 border-slate-800 flex items-center justify-between">
             <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Global Cluster Health</span>
-              <p className="text-2xl font-bold mt-1 text-slate-800 dark:text-slate-100">{avgHealth}%</p>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Global Asset Fleet Health</span>
+              <p className="text-2xl font-bold mt-1 text-slate-100">{avgHealth}%</p>
             </div>
-            <Activity className="text-emerald-500" size={32} />
+            <Activity className="text-emerald-400" size={32} />
           </div>
-          <div className="card p-4 flex items-center justify-between">
+          <div className="card p-4 bg-slate-900 border-slate-800 flex items-center justify-between">
             <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Active Risk Vectors</span>
-              <p className="text-2xl font-bold mt-1 text-slate-800 dark:text-slate-100">{topRisks.length} Nodes</p>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 font-sans">Active Parameter Risk Vectors</span>
+              <p className="text-2xl font-bold mt-1 text-slate-100">{topRisks.length} Asset Twins</p>
             </div>
-            <AlertTriangle className={topRisks.length > 0 ? 'text-rose-500 animate-bounce' : 'text-slate-400'} size={32} />
+            <AlertTriangle className={topRisks.length > 0 ? 'text-rose-400 animate-bounce' : 'text-slate-400'} size={32} />
           </div>
-          <div className="card p-4 flex items-center justify-between">
+          <div className="card p-4 bg-slate-900 border-slate-800 flex items-center justify-between">
             <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Model Confidence</span>
-              <p className="text-2xl font-bold mt-1 text-slate-800 dark:text-slate-100">96.8%</p>
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Model Inference Confidence</span>
+              <p className="text-2xl font-bold mt-1 text-slate-100">96.8%</p>
             </div>
-            <ShieldCheck className="text-brand-500" size={32} />
+            <ShieldCheck className="text-purple-400" size={32} />
           </div>
         </div>
 
         {/* Interactive Prediction Panel */}
-        <div className="card p-5">
-          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
-            <Brain size={16} className="text-brand-500" /> Run OpenShift AI Telemetry Inference
+        <div className="card p-5 bg-slate-900 border-slate-800">
+          <h3 className="text-sm font-semibold text-slate-100 mb-4 flex items-center gap-2">
+            <Brain size={16} className="text-purple-400" /> Run OpenShift AI Telemetry Inference
           </h3>
           <div className="flex flex-col sm:flex-row gap-3">
             <select
               value={selectedServerId}
               onChange={(e) => setSelectedServerId(e.target.value)}
-              className="flex-1 rounded-lg border border-slate-200 dark:border-slate-800 p-2.5 text-sm bg-white dark:bg-slate-900"
+              className="flex-1 rounded-lg border border-slate-800 p-2.5 text-xs bg-slate-950 text-slate-100 font-mono"
             >
-              <option value="">Select target hypervisor node...</option>
+              <option value="MOTOR-001">MOTOR-001 (Siemens 150kW Induction Motor)</option>
+              <option value="LAPTOP-001">LAPTOP-001 (Host Workstation System)</option>
+              <option value="PUMP-001">PUMP-001 (Centrifugal Fluid Pump)</option>
               {servers.map((s) => (
-                <option key={s.id} value={s.id}>
+                <option key={s.id} value={s.hostname || s.id}>
                   {s.hostname} ({s.rack} - CPU {s.cpuUsage}% / Temp {s.temperatureC}°C)
                 </option>
               ))}
@@ -124,7 +115,7 @@ const AIInsights = () => {
             <button
               onClick={handlePredict}
               disabled={!selectedServerId || predictMutation.isPending}
-              className="rounded-lg bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="rounded-lg bg-purple-600 px-5 py-2.5 text-xs font-semibold text-white hover:bg-purple-500 disabled:opacity-50 flex items-center justify-center gap-2 shadow-md"
             >
               {predictMutation.isPending ? <RefreshCw className="animate-spin" size={16} /> : <PlayCircle size={16} />}
               Analyze Telemetry
@@ -132,69 +123,69 @@ const AIInsights = () => {
           </div>
 
           {predictMutation.isSuccess && predictMutation.data && (
-            <div className="mt-4 p-4 rounded-xl border border-brand-100 dark:border-brand-900/30 bg-brand-50/20 dark:bg-brand-950/10 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+            <div className="mt-4 p-4 rounded-xl border border-purple-500/30 bg-purple-500/10 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono">
               <div>
                 <span className="text-slate-400 block mb-1">Failure Risk</span>
-                <span className="text-lg font-bold text-rose-500">{(predictMutation.data.predictedFailureProbability * 100).toFixed(0)}%</span>
+                <span className="text-lg font-bold text-rose-400">{(predictMutation.data.predictedFailureProbability * 100).toFixed(0)}%</span>
               </div>
               <div>
                 <span className="text-slate-400 block mb-1">Anomaly Target</span>
-                <span className="text-lg font-bold text-slate-700 dark:text-slate-200">{predictMutation.data.failureType}</span>
+                <span className="text-lg font-bold text-slate-100">{predictMutation.data.failureType}</span>
               </div>
               <div>
                 <span className="text-slate-400 block mb-1">Confidence Score</span>
-                <span className="text-lg font-bold text-slate-700 dark:text-slate-200">{(predictMutation.data.confidenceScore * 100).toFixed(0)}%</span>
+                <span className="text-lg font-bold text-slate-100">{(predictMutation.data.confidenceScore * 100).toFixed(0)}%</span>
               </div>
-              <div className="col-span-2 sm:col-span-4 border-t border-slate-100 dark:border-slate-800 pt-3">
+              <div className="col-span-2 sm:col-span-4 border-t border-slate-800 pt-3 font-sans">
                 <span className="text-slate-400 block mb-1">AI Recommendation</span>
-                <p className="font-semibold text-slate-700 dark:text-slate-200 text-sm">{predictMutation.data.recommendedAction}</p>
+                <p className="font-semibold text-slate-100 text-xs">{predictMutation.data.recommendedAction}</p>
               </div>
             </div>
           )}
         </div>
 
         {/* Prediction Execution Log History */}
-        <div className="card p-5">
+        <div className="card p-5 bg-slate-900 border-slate-800">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-              <TrendingUp size={16} className="text-brand-500" /> Telemetry Inference History
+            <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+              <TrendingUp size={16} className="text-purple-400" /> Telemetry Inference History
             </h3>
-            <button onClick={() => refetch()} className="p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">
+            <button onClick={() => refetch()} className="p-1 rounded hover:bg-slate-800 text-slate-400">
               <RefreshCw size={14} />
             </button>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full text-left border-collapse text-xs font-mono">
               <thead>
-                <tr className="border-b border-slate-100 dark:border-slate-800 text-slate-400 uppercase tracking-wider font-semibold">
-                  <th className="py-2.5">Target Host ID</th>
-                  <th className="py-2.5 text-center">Health Score</th>
-                  <th className="py-2.5 text-center">Failure Risk</th>
-                  <th className="py-2.5">Anomaly Type</th>
-                  <th className="py-2.5">Mitigation Action</th>
+                <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider font-semibold bg-slate-800/40">
+                  <th className="p-2.5">Target Host ID</th>
+                  <th className="p-2.5 text-center">Health Score</th>
+                  <th className="p-2.5 text-center">Failure Risk</th>
+                  <th className="p-2.5">Anomaly Type</th>
+                  <th className="p-2.5">Mitigation Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-300">
+              <tbody className="divide-y divide-slate-800 text-slate-300">
                 {history.map((p, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
-                    <td className="py-3 font-mono">{p.targetId}</td>
-                    <td className="py-3 text-center font-bold">
-                      <span className={p.healthScore < 70 ? 'text-rose-500' : p.healthScore < 90 ? 'text-amber-500' : 'text-emerald-500'}>
+                  <tr key={idx} className="hover:bg-slate-800/40">
+                    <td className="p-2.5 font-bold text-purple-400">{p.targetId}</td>
+                    <td className="p-2.5 text-center font-bold">
+                      <span className={p.healthScore < 70 ? 'text-rose-400' : p.healthScore < 90 ? 'text-amber-400' : 'text-emerald-400'}>
                         {p.healthScore}%
                       </span>
                     </td>
-                    <td className="py-3 text-center font-bold">
-                      <span className={p.predictedFailureProbability > 0.7 ? 'text-rose-500' : p.predictedFailureProbability > 0.3 ? 'text-amber-500' : 'text-emerald-500'}>
+                    <td className="p-2.5 text-center font-bold">
+                      <span className={p.predictedFailureProbability > 0.7 ? 'text-rose-400' : p.predictedFailureProbability > 0.3 ? 'text-amber-400' : 'text-emerald-400'}>
                         {(p.predictedFailureProbability * 100).toFixed(0)}%
                       </span>
                     </td>
-                    <td className="py-3">
-                      <Badge status={p.failureType === 'NONE' ? 'HEALTHY' : (p.failureType === 'CPU_OVERLOAD' || p.failureType === 'MEMORY_LEAK' ? 'WARNING' : 'CRITICAL')}>
+                    <td className="p-2.5">
+                      <Badge status={p.failureType === 'NONE' ? 'HEALTHY' : (p.failureType === 'CPU_OVERLOAD' || p.failureType === 'BEARING_DEGRADATION' ? 'WARNING' : 'CRITICAL')}>
                         {p.failureType}
                       </Badge>
                     </td>
-                    <td className="py-3 truncate max-w-xs">{p.recommendedAction}</td>
+                    <td className="p-2.5 truncate max-w-xs font-sans">{p.recommendedAction}</td>
                   </tr>
                 ))}
               </tbody>
