@@ -15,6 +15,7 @@ import { getMetrics } from '@/services/metrics.service';
 import { useWebSocketMetrics } from '@/hooks/useWebSocketMetrics';
 import PageLoader from '@/components/loading/PageLoader';
 import ErrorState from '@/components/error/ErrorState';
+import SimulationControlBar from '@/components/simulation/SimulationControlBar';
 
 const Dashboard = () => {
   // Connect to real-time WebSocket updates
@@ -76,7 +77,8 @@ const Dashboard = () => {
   }
 
   return (
-    <DashboardLayout title="Dashboard" description="Live overview of the data center digital twin">
+    <DashboardLayout title="Operational Dashboard" description="SEE • PREDICT • ACT — Real-Time Local Host & Industrial Digital Twins">
+      <SimulationControlBar onScenarioChange={handleRetry} />
       <ClusterHealthCards cluster={cluster} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">

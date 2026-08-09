@@ -12,6 +12,56 @@ export interface Server {
   uptimeHours: number;
 }
 
+export type AssetSource = 'REAL-TIME LOCAL' | 'SIMULATED' | 'TARGET / FUTURE';
+export type AssetType = 'LAPTOP' | 'SERVER' | 'INDUSTRIAL_MOTOR' | 'PUMP' | 'CNC_MACHINE' | 'COMPRESSOR' | 'ROBOT';
+
+export interface TelemetryMetrics {
+  cpu: number;
+  cpuFreqGHz: number;
+  ram: number;
+  ramUsedGb: number;
+  ramTotalGb: number;
+  disk: number;
+  diskUsedGb: number;
+  diskTotalGb: number;
+  temperature: number;
+  networkInKbps: number;
+  networkOutKbps: number;
+  processCount: number;
+  threadCount: number;
+  uptimeSeconds: number;
+  loadAverage: number;
+}
+
+export interface DataQuality {
+  valid: boolean;
+  freshnessMs: number;
+  completenessPct: number;
+  latencyMs: number;
+  status: 'GOOD' | 'STALE' | 'DEGRADED' | 'BUFFERED';
+}
+
+export interface Asset {
+  id: string;
+  name: string;
+  type: AssetType;
+  source: AssetSource;
+  manufacturer: string;
+  model: string;
+  location: string;
+  status: ServerStatus;
+  operatingMode: 'NORMAL' | 'HIGH_LOAD' | 'DEGRADATION' | 'FAULT' | 'DISCONNECTED';
+  healthScore: number;
+  healthBreakdown: Record<string, number>;
+  operatingHours: number;
+  metrics: TelemetryMetrics;
+  quality: DataQuality;
+  lastUpdated: string;
+  activeAlerts?: string[];
+  currentPrediction?: string;
+  recommendedAction?: string;
+}
+
 export interface MetricPoint {
   timestamp: string;
   cpu: number;
