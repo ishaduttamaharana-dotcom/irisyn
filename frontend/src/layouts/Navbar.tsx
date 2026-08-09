@@ -1,17 +1,33 @@
-import { useState } from 'react';
-import { Bell, Moon, Sun, Menu, Bot, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, Moon, Sun, Menu, Bot, Sparkles, Search, Compass } from 'lucide-react';
 import { useTheme } from '@/context/ThemeProvider';
 import { useAuth } from '@/context/AuthContext';
 import CopilotDrawer from '@/components/copilot/CopilotDrawer';
+import UniversalCommandBar from '@/components/common/UniversalCommandBar';
 
 const Navbar = () => {
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+  const [isCommandBarOpen, setIsCommandBarOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsCommandBarOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
     <>
       <header className="h-16 flex items-center justify-between px-4 md:px-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+        {/* Left Branding & Title */}
         <div className="flex items-center gap-3">
           <button className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Open menu">
             <Menu size={20} />
@@ -24,7 +40,34 @@ const Navbar = () => {
           </h1>
         </div>
 
+        {/* Center Universal Search Bar Trigger */}
+        <div className="flex-1 max-w-md mx-4 hidden md:block">
+          <button
+            onClick={() => setIsCommandBarOpen(true)}
+            className="w-full flex items-center justify-between px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 text-xs border border-slate-200 dark:border-slate-750 transition-all"
+          >
+            <span className="flex items-center gap-2">
+              <Search size={14} className="text-purple-500" />
+              <span>Search IRISYN resources or enter command...</span>
+            </span>
+            <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-900 text-[10px] font-mono text-slate-500 font-bold border border-slate-300 dark:border-slate-700">
+              Ctrl + K
+            </kbd>
+          </button>
+        </div>
+
+        {/* Right Actions */}
         <div className="flex items-center gap-3">
+          {/* Access Center Link */}
+          <button
+            onClick={() => navigate('/access-center')}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all border border-slate-200 dark:border-slate-750"
+            title="Open Universal System Access Center"
+          >
+            <Compass size={15} className="text-purple-500" />
+            <span>Access Center</span>
+          </button>
+
           {/* AI Copilot Drawer Trigger */}
           <button
             onClick={() => setIsCopilotOpen(true)}
@@ -37,13 +80,13 @@ const Navbar = () => {
 
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
             aria-label="Toggle theme"
           >
             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
           </button>
 
-          <button className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 relative" aria-label="Notifications">
+          <button className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 relative text-slate-600 dark:text-slate-300" aria-label="Notifications">
             <Bell size={18} />
             <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />
           </button>
@@ -60,8 +103,9 @@ const Navbar = () => {
         </div>
       </header>
 
-      {/* Floating Copilot Drawer */}
+      {/* Floating Drawers & Modals */}
       <CopilotDrawer isOpen={isCopilotOpen} onClose={() => setIsCopilotOpen(false)} />
+      <UniversalCommandBar isOpen={isCommandBarOpen} onClose={() => setIsCommandBarOpen(false)} />
     </>
   );
 };

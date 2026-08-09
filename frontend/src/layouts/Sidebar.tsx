@@ -15,7 +15,9 @@ import {
   Database,
   ShieldCheck,
   Settings as SettingsIcon,
-  BarChart3
+  BarChart3,
+  Compass,
+  Terminal
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -24,6 +26,7 @@ const NAV_GROUPS = [
     title: 'CORE PLATFORM',
     items: [
       { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+      { to: '/access-center', label: 'Universal Access Center', icon: Compass },
       { to: '/copilot', label: 'AI Copilot', icon: Bot },
       { to: '/assets', label: 'Digital Twins (Assets)', icon: Cpu },
       { to: '/telemetry', label: 'Live Telemetry', icon: Activity },
@@ -35,6 +38,7 @@ const NAV_GROUPS = [
       { to: '/servers', label: 'Servers & Racks', icon: Server },
       { to: '/virtual-machines', label: 'Virtual Machines', icon: Boxes },
       { to: '/containers', label: 'Containers & Pods', icon: ContainerIcon },
+      { to: '/services', label: 'Service Directory', icon: Terminal },
     ],
   },
   {
@@ -80,27 +84,30 @@ const Sidebar = () => {
       <nav className="flex-1 overflow-y-auto scrollbar-thin py-4 px-3 space-y-5">
         {NAV_GROUPS.map((group) => (
           <div key={group.title} className="space-y-1">
-            <h4 className="px-3 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+            <h2 className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               {group.title}
-            </h4>
-            {group.items.map(({ to, label, icon: Icon, end }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
-                className={({ isActive }) =>
-                  clsx(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-xs font-semibold transition-colors',
-                    isActive
-                      ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-l-2 border-purple-500'
-                      : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800/60'
-                  )
-                }
-              >
-                <Icon size={16} />
-                {label}
-              </NavLink>
-            ))}
+            </h2>
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) =>
+                    clsx(
+                      'flex items-center gap-3 px-3 py-2 text-xs font-semibold rounded-xl transition-all duration-150',
+                      isActive
+                        ? 'bg-purple-600/10 text-purple-600 dark:bg-purple-500/15 dark:text-purple-300 font-bold border border-purple-500/20 shadow-sm'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-slate-200'
+                    )
+                  }
+                >
+                  <Icon size={16} className="shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                </NavLink>
+              );
+            })}
           </div>
         ))}
       </nav>

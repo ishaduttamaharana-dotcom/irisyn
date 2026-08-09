@@ -20,6 +20,8 @@ import Automation from './pages/Automation/Automation';
 import Security from './pages/Security/Security';
 import Cluster from './pages/Cluster/Cluster';
 import Settings from './pages/Settings/Settings';
+import AccessCenter from './pages/Access/AccessCenter';
+import ServicesDirectory from './pages/Services/ServicesDirectory';
 
 const App = () => {
   return (
@@ -30,6 +32,8 @@ const App = () => {
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/access-center" element={<AccessCenter />} />
+              <Route path="/services" element={<ServicesDirectory />} />
               <Route path="/copilot" element={<CopilotConsole />} />
               <Route path="/assets" element={<AssetList />} />
               <Route path="/assets/:id" element={<AssetDetail />} />
