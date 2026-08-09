@@ -31,6 +31,7 @@ export interface TelemetryMetrics {
   threadCount: number;
   uptimeSeconds: number;
   loadAverage: number;
+  rpm?: number;
 }
 
 export interface DataQuality {

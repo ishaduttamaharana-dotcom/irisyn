@@ -8,6 +8,7 @@ import Login from './pages/Login/Login';
 import Dashboard from './pages/Dashboard/Dashboard';
 import AssetList from './pages/Assets/AssetList';
 import AssetDetail from './pages/Assets/AssetDetail';
+import TelemetryView from './pages/Telemetry/TelemetryView';
 import CopilotConsole from './pages/Copilot/CopilotConsole';
 import Architecture from './pages/Architecture/Architecture';
 import DataSources from './pages/DataSources/DataSources';
@@ -37,7 +38,7 @@ const App = () => {
               <Route path="/copilot" element={<CopilotConsole />} />
               <Route path="/assets" element={<AssetList />} />
               <Route path="/assets/:id" element={<AssetDetail />} />
-              <Route path="/telemetry" element={<AssetList />} />
+              <Route path="/telemetry" element={<TelemetryView />} />
               <Route path="/architecture" element={<Architecture />} />
               <Route path="/data-sources" element={<DataSources />} />
               <Route path="/servers" element={<Servers />} />
