@@ -8,6 +8,7 @@ import Login from './pages/Login/Login';
 import Dashboard from './pages/Dashboard/Dashboard';
 import AssetList from './pages/Assets/AssetList';
 import AssetDetail from './pages/Assets/AssetDetail';
+import CopilotConsole from './pages/Copilot/CopilotConsole';
 import Architecture from './pages/Architecture/Architecture';
 import DataSources from './pages/DataSources/DataSources';
 import Servers from './pages/Servers/Servers';
@@ -29,6 +30,7 @@ const App = () => {
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/copilot" element={<CopilotConsole />} />
               <Route path="/assets" element={<AssetList />} />
               <Route path="/assets/:id" element={<AssetDetail />} />
               <Route path="/telemetry" element={<AssetList />} />

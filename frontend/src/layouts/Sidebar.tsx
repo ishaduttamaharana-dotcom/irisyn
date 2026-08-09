@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
+  Bot,
   Cpu,
   Activity,
   Server,
@@ -23,6 +24,7 @@ const NAV_GROUPS = [
     title: 'CORE PLATFORM',
     items: [
       { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+      { to: '/copilot', label: 'AI Copilot', icon: Bot },
       { to: '/assets', label: 'Digital Twins (Assets)', icon: Cpu },
       { to: '/telemetry', label: 'Live Telemetry', icon: Activity },
     ],
