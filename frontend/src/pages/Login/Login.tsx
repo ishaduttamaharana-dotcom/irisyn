@@ -13,7 +13,8 @@ const Login = () => {
   return (
     <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
       <div className="card w-full max-w-sm p-6 text-center">
-        <h1 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Digital Twin Console</h1>
+        <img src="/irisyn-logo.png" alt="IRISYN Logo" className="h-16 w-16 mx-auto mb-3 object-contain" />
+        <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-wide">IRISYN Console</h1>
         <p className="mt-1 text-sm text-slate-500">Authentication is not implemented yet (Phase 2 scaffold).</p>
         <button
           onClick={handleLogin}

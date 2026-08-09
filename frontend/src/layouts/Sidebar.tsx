@@ -29,11 +29,11 @@ const NAV_ITEMS = [
 const Sidebar = () => {
   return (
     <aside className="hidden md:flex md:flex-col md:w-64 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-      <div className="h-16 flex items-center gap-2 px-5 border-b border-slate-200 dark:border-slate-800">
-        <div className="h-8 w-8 rounded-lg bg-brand-500 flex items-center justify-center text-white font-bold">
-          DT
-        </div>
-        <span className="font-semibold text-slate-800 dark:text-slate-100">Digital Twin</span>
+      <div className="h-16 flex items-center gap-3 px-5 border-b border-slate-200 dark:border-slate-800">
+        <img src="/irisyn-logo.png" alt="IRISYN Logo" className="h-9 w-9 object-contain shrink-0 filter drop-shadow-sm" />
+        <span className="font-bold text-lg text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-500 dark:from-purple-400 dark:to-indigo-300 tracking-wide">
+          IRISYN
+        </span>
       </div>
       <nav className="flex-1 overflow-y-auto scrollbar-thin py-4 px-3 space-y-1">
         {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (

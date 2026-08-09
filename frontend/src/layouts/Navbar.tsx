@@ -12,8 +12,11 @@ const Navbar = () => {
         <button className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Open menu">
           <Menu size={20} />
         </button>
-        <h1 className="text-sm md:text-base font-semibold text-slate-700 dark:text-slate-200">
-          AI-Powered Autonomous Data Center Digital Twin
+        <img src="/irisyn-logo.png" alt="IRISYN Logo" className="h-7 w-7 object-contain md:hidden" />
+        <h1 className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+          <span className="text-purple-600 dark:text-purple-400 font-extrabold tracking-wide">IRISYN</span>
+          <span className="hidden sm:inline text-slate-400 font-normal">|</span>
+          <span className="hidden sm:inline text-slate-600 dark:text-slate-300 font-medium">AI-Powered Autonomous Data Center Digital Twin</span>
         </h1>
       </div>
       <div className="flex items-center gap-3">

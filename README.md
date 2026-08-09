@@ -1,4 +1,4 @@
-# AI-Powered Autonomous Data Center Digital Twin
+# IRISYN — AI-Powered Autonomous Data Center Digital Twin
 
 Phase 2 — Foundation & Core Application Setup. This monorepo contains the
 scaffolding for the platform: frontend, backend, database, monitoring, and
