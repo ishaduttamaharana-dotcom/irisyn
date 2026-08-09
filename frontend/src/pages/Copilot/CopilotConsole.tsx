@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import DashboardLayout from '@/layouts/DashboardLayout';
-import { Bot, Send, Sparkles, AlertTriangle, Database, RefreshCw, Activity } from 'lucide-react';
+import { Bot, Send, Sparkles, AlertTriangle, Database, RefreshCw, Activity, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
 import { queryCopilot, executeCopilotAction, getCopilotStatus, CopilotResponse, CopilotStatus } from '@/services/copilot.service';
 
 const CopilotConsole = () => {
@@ -9,6 +9,7 @@ const CopilotConsole = () => {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<CopilotStatus | null>(null);
   const [actionConfirmPayload, setActionConfirmPayload] = useState<any | null>(null);
+  const [expandedTraceIdx, setExpandedTraceIdx] = useState<number | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -77,7 +78,7 @@ const CopilotConsole = () => {
   return (
     <DashboardLayout
       title="IRISYN AI Copilot Command Console"
-      description="Context-aware conversational Digital Twin assistant powered by live telemetry & platform tools"
+      description="Data-first conversational Digital Twin assistant enforcing Rule 0: IRISYN Data is the source of truth"
     >
       <div className="space-y-6">
         {/* AI Status Header Bar */}
@@ -88,13 +89,13 @@ const CopilotConsole = () => {
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                IRISYN COPILOT CORE
+                IRISYN COPILOT DATA GATE
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
                   AI STATUS: {status?.aiStatus ?? 'ONLINE'}
                 </span>
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                Model: <strong className="text-purple-300">{status?.configuredModel ?? 'IRISYN Digital Twin Copilot v2.4'}</strong> • Sync: {status?.lastDataSync ?? '0.8 sec ago'}
+                Model: <strong className="text-purple-300">{status?.configuredModel ?? 'IRISYN Data-First Copilot v3.0'}</strong> • Sync: {status?.lastDataSync ?? '0.8 sec ago'}
               </p>
             </div>
           </div>
@@ -118,17 +119,18 @@ const CopilotConsole = () => {
             <div className="card p-4 bg-slate-900 border-slate-800">
               <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                 <Sparkles size={14} className="text-purple-400" />
-                Quick Operations
+                Golden Test Prompts
               </h4>
               <div className="space-y-2 text-xs">
                 {[
                   'What is happening right now?',
-                  'Show unhealthy assets',
-                  'Why is MOTOR-001 in warning state?',
+                  'What is CPU usage of dc-node-03?',
+                  'Why is MOTOR-001 health 72%?',
+                  'Compare MOTOR-001 and MOTOR-002',
                   'Inject bearing fault into MOTOR-001',
-                  'Is the telemetry currently live?',
-                  'Show today critical incidents',
-                  'Compare MOTOR-001 with host laptop',
+                  'Is telemetry currently live?',
+                  'What is the temperature of MOTOR-001?',
+                  'Is MOTOR-001 a real motor?',
                 ].map((prompt) => (
                   <button
                     key={prompt}
@@ -150,7 +152,7 @@ const CopilotConsole = () => {
                   <Bot size={44} className="mx-auto text-purple-400 animate-bounce" />
                   <h4 className="font-bold text-slate-200 text-base">IRISYN Copilot Command Center Active</h4>
                   <p className="text-slate-400 text-xs max-w-sm mx-auto leading-relaxed">
-                    Ask natural language questions about real local laptop host hardware, synthetic industrial asset twins, health scores, and anomaly predictions.
+                    Data-first architecture enforcing Rule 0: The LLM is NOT the source of truth, IRISYN Data is. All metrics are retrieved directly from live platform APIs & deterministic calculation engines.
                   </p>
                 </div>
               )}
@@ -165,7 +167,14 @@ const CopilotConsole = () => {
 
                   <div className="p-5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-4">
                     <div>
-                      <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest block mb-1">ANSWER</span>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest">ANSWER</span>
+                        {msg.freshnessStatus && (
+                          <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+                            <CheckCircle2 size={11} /> {msg.freshnessStatus} ● &lt; 1s
+                          </span>
+                        )}
+                      </div>
                       <p className="text-slate-100 text-sm leading-relaxed font-medium">{msg.answer}</p>
                     </div>
 
@@ -181,6 +190,30 @@ const CopilotConsole = () => {
                       </div>
                     )}
 
+                    {/* Table Render */}
+                    {msg.tableData && msg.tableData.length > 0 && (
+                      <div className="overflow-x-auto rounded-lg border border-slate-800">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-slate-800 text-slate-300 font-bold">
+                            <tr>
+                              {Object.keys(msg.tableData[0]).map((k) => (
+                                <th key={k} className="p-2.5">{k}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-800 text-slate-300 font-mono">
+                            {msg.tableData.map((row, rIdx) => (
+                              <tr key={rIdx} className="hover:bg-slate-800/40">
+                                {Object.values(row).map((v, cIdx) => (
+                                  <td key={cIdx} className="p-2.5">{String(v)}</td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
                     {msg.risk && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                         <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300">
@@ -189,6 +222,30 @@ const CopilotConsole = () => {
                         <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300">
                           <strong className="block text-[11px] text-amber-400 mb-0.5">RECOMMENDATION:</strong> {msg.recommendation}
                         </div>
+                      </div>
+                    )}
+
+                    {/* Expandable Data Used Trace Panel */}
+                    {msg.dataUsedTrace && msg.dataUsedTrace.length > 0 && (
+                      <div className="border-t border-slate-800 pt-2">
+                        <button
+                          onClick={() => setExpandedTraceIdx(expandedTraceIdx === idx ? null : idx)}
+                          className="text-xs text-slate-400 hover:text-purple-300 font-mono flex items-center justify-between w-full"
+                        >
+                          <span className="flex items-center gap-1.5">
+                            <Database size={13} className="text-purple-400" />
+                            OPERATIONAL DATA USED TRACE
+                          </span>
+                          {expandedTraceIdx === idx ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        </button>
+
+                        {expandedTraceIdx === idx && (
+                          <div className="mt-2 p-3 rounded-lg bg-slate-900 text-xs font-mono text-slate-300 space-y-1 border border-slate-800">
+                            {msg.dataUsedTrace.map((tr, tIdx) => (
+                              <div key={tIdx}>{tr}</div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -248,7 +305,7 @@ const CopilotConsole = () => {
               {loading && (
                 <div className="flex items-center gap-2 text-slate-400 text-xs italic p-3">
                   <RefreshCw size={16} className="animate-spin text-purple-400" />
-                  Copilot is executing tool requests against Digital Twin Engine...
+                  Copilot Data Gate is executing tool requests against Digital Twin Engine...
                 </div>
               )}
               <div ref={chatEndRef} />

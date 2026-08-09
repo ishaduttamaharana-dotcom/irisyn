@@ -15,6 +15,15 @@ export interface CopilotResponse {
   recommendation: string;
   dataSourcesUsed: string[];
   confidence: 'CONFIRMED' | 'LIKELY' | 'POSSIBLE';
+
+  // Data-First Attribution & Trace
+  freshnessStatus?: 'LIVE' | 'STALE' | 'OFFLINE';
+  freshnessSeconds?: number;
+  dataUsedTrace?: string[];
+  tableData?: Record<string, any>[];
+  rootCauseTimeline?: string[];
+
+  // Consequential Action Confirmation
   requiresActionConfirmation?: boolean;
   actionPayload?: {
     action?: string;

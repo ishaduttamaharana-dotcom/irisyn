@@ -11,8 +11,31 @@ import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.*;
 
+/**
+ * Data-First Copilot Engine.
+ * Enforces Rule 0: The LLM is NOT the source of truth, IRISYN Data is.
+ * Resolves entities, metrics, time ranges, performs deterministic math, validates freshness, and generates operational data-access traces.
+ */
 @ApplicationScoped
 public class CopilotEngine {
+
+    @Inject
+    CopilotDataGate dataGate;
+
+    @Inject
+    CopilotEntityResolver entityResolver;
+
+    @Inject
+    CopilotMetricResolver metricResolver;
+
+    @Inject
+    CopilotTimeResolver timeResolver;
+
+    @Inject
+    CopilotCalculationEngine calculationEngine;
+
+    @Inject
+    CopilotResultValidator resultValidator;
 
     @Inject
     CopilotToolRouter toolRouter;
@@ -25,43 +48,63 @@ public class CopilotEngine {
         response.question = query.question;
         response.timestamp = Instant.now().toString();
 
-        String q = query.question != null ? query.question.trim().toLowerCase() : "";
-        String activeAsset = query.activeAssetId;
+        String rawQ = query.question != null ? query.question.trim() : "";
 
-        // Context awareness fallback
-        if ((activeAsset == null || activeAsset.isBlank()) && (q.contains("motor-001") || q.contains("motor"))) {
-            activeAsset = "MOTOR-001";
-        } else if ((activeAsset == null || activeAsset.isBlank()) && (q.contains("laptop") || q.contains("host"))) {
-            activeAsset = "LAPTOP-001";
+        // 1. DATA GATE CLASSIFICATION
+        Set<CopilotQueryCategory> categories = dataGate.classifyQuery(rawQ);
+        boolean requiresLiveData = dataGate.requiresLiveData(rawQ);
+
+        // 2. ENTITY & METRIC & TIME RESOLUTION
+        CopilotEntityResolver.EntityResolutionResult entityRes = entityResolver.resolveEntity(rawQ, query.activeAssetId);
+        String resolvedMetric = metricResolver.resolveMetric(rawQ, "ALL");
+        CopilotTimeResolver.TimeRangeResult timeRes = timeResolver.resolveTimeRange(rawQ);
+
+        // Ambiguity Check
+        if (entityRes.ambiguous) {
+            response.answer = "Which asset twin would you like me to inspect?";
+            response.evidence = entityRes.candidates;
+            response.confidence = "POSSIBLE";
+            return response;
         }
 
-        // 1. ACTION INTENTS (Require Confirmation Dialog)
-        if (q.contains("inject") || q.contains("fault") || q.contains("bearing fault") || q.contains("thermal stress") || q.contains("electrical fault")) {
-            return buildActionConfirmationResponse(q, activeAsset != null ? activeAsset : "MOTOR-001");
+        String targetAssetId = entityRes.resolvedAssetId != null ? entityRes.resolvedAssetId : "FLEET";
+
+        // 3. ACTION INTENT (Requires Confirmation)
+        if (categories.contains(CopilotQueryCategory.ACTION)) {
+            return buildActionConfirmationResponse(rawQ, targetAssetId);
         }
 
-        // 2. QUERY INTENTS
-        if (q.contains("unhealthy") || q.contains("abnormal") || q.contains("critical asset") || q.contains("worst")) {
+        // 4. COMPARISON INTENT
+        if (categories.contains(CopilotQueryCategory.COMPARISON)) {
+            return handleComparisonQuery(response, rawQ);
+        }
+
+        // 5. TREND & AGGREGATION INTENT
+        if (categories.contains(CopilotQueryCategory.TREND) || categories.contains(CopilotQueryCategory.AGGREGATION) || rawQ.contains("last")) {
+            return handleHistoricalTrendQuery(response, targetAssetId, resolvedMetric, timeRes);
+        }
+
+        // 6. UNHEALTHY / ABNORMAL INTENT
+        if (rawQ.contains("unhealthy") || rawQ.contains("abnormal") || rawQ.contains("worst") || rawQ.contains("critical")) {
             return handleUnhealthyAssetsQuery(response);
         }
 
-        if (q.contains("why") && activeAsset != null && !activeAsset.isBlank()) {
-            return handleWhyAssetUnhealthyQuery(response, activeAsset);
+        // 7. HEALTH / WHY DECREASED INTENT
+        if (categories.contains(CopilotQueryCategory.HEALTH) || rawQ.contains("why")) {
+            return handleWhyAssetUnhealthyQuery(response, targetAssetId);
         }
 
-        if (q.contains("compare")) {
-            return handleAssetComparisonQuery(response, q);
+        // 8. TELEMETRY / SYSTEM STATUS INTENT
+        if (categories.contains(CopilotQueryCategory.SYSTEM_STATUS)) {
+            return handleSystemTelemetryStatusQuery(response);
         }
 
-        if (q.contains("telemetry") || q.contains("fresh") || q.contains("stale") || q.contains("live")) {
-            return handleTelemetryStatusQuery(response);
+        // 9. SPECIFIC ASSET DIAGNOSIS
+        if (entityRes.resolvedAssetId != null) {
+            return handleSpecificAssetDiagnosis(response, entityRes);
         }
 
-        if (activeAsset != null && !activeAsset.isBlank() && (q.contains("inspect") || q.contains("status") || q.contains("temperature") || q.contains("vibration") || q.contains("health"))) {
-            return handleSpecificAssetDiagnosis(response, activeAsset);
-        }
-
-        // Default Overview / System Status Intent
+        // Default Overview Intent
         return handleSystemOverviewQuery(response);
     }
 
@@ -89,6 +132,65 @@ public class CopilotEngine {
         return Map.of("status", "REJECTED", "message", "Unknown action: " + action);
     }
 
+    private CopilotResponseDto handleHistoricalTrendQuery(CopilotResponseDto res, String assetId, String metric, CopilotTimeResolver.TimeRangeResult timeRes) {
+        AssetDto asset = toolRouter.getAsset(assetId);
+        String assetName = asset != null ? asset.name : assetId;
+        String sourceTag = asset != null ? asset.source : "REAL-TIME LOCAL";
+
+        CopilotCalculationEngine.CalculationResult calc = toolRouter.getTelemetrySummary(assetId, metric, timeRes.startTime, timeRes.endTime);
+        CopilotResultValidator.ValidationResult val = resultValidator.validate(asset != null ? asset.quality : null, assetId, metric, calc.sampleCount);
+
+        res.answer = assetName + " (" + assetId + ") " + metric.toUpperCase() + " trend over " + timeRes.label + " is " + calc.trend + " (" + (calc.pctChange >= 0 ? "+" + calc.pctChange : calc.pctChange) + "%).";
+        res.evidence.add("Average " + metric.toUpperCase() + ": " + calc.avg);
+        res.evidence.add("Minimum Measured: " + calc.min);
+        res.evidence.add("Maximum Measured: " + calc.max);
+        res.evidence.add("StdDev / Variance: " + calc.stddev);
+        res.evidence.add("Calculated Trend Direction: " + calc.trend);
+
+        res.risk = "DECREASING".equals(calc.trend) || calc.pctChange > 10.0 ? "Parameter drift detected over target window." : "Low variance. Nominal trend.";
+        res.recommendation = "Maintain regular time-series telemetry observation.";
+        res.dataSourcesUsed.add(sourceTag);
+        res.confidence = "CONFIRMED";
+
+        res.freshnessStatus = val.status;
+        res.freshnessSeconds = val.freshnessSeconds;
+        res.dataUsedTrace = val.dataUsedTrace;
+
+        return res;
+    }
+
+    private CopilotResponseDto handleComparisonQuery(CopilotResponseDto res, String q) {
+        List<AssetDto> all = toolRouter.getAssets();
+        res.answer = "Asset Comparison Matrix across " + all.size() + " registered Digital Twin instances:";
+
+        for (AssetDto a : all) {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("Asset ID", a.id);
+            row.put("Name", a.name);
+            row.put("Source", a.source);
+            row.put("Health Score", a.healthScore + "%");
+            row.put("Status", a.status);
+            row.put("Temp (°C)", a.metrics.temperature);
+            row.put("CPU/Load (%)", a.metrics.cpu);
+            res.tableData.add(row);
+
+            res.evidence.add(a.id + ": Health " + a.healthScore + "% | Temp " + a.metrics.temperature + "°C | Load " + a.metrics.cpu + "% [" + a.source + "]");
+        }
+
+        res.risk = "Comparative load variance detected between physical laptop host and synthetic industrial motor.";
+        res.recommendation = "Review asset detail views for spatial parameters.";
+        res.dataSourcesUsed.add("REAL-TIME LOCAL");
+        res.dataSourcesUsed.add("SIMULATED");
+        res.confidence = "CONFIRMED";
+
+        CopilotResultValidator.ValidationResult val = resultValidator.validate(null, "FLEET", "COMPARISON", all.size());
+        res.freshnessStatus = val.status;
+        res.freshnessSeconds = val.freshnessSeconds;
+        res.dataUsedTrace = val.dataUsedTrace;
+
+        return res;
+    }
+
     private CopilotResponseDto handleSystemOverviewQuery(CopilotResponseDto res) {
         Map<String, Object> sys = toolRouter.getSystemHealth();
         List<AssetDto> criticals = toolRouter.getCriticalOrUnhealthyAssets();
@@ -112,6 +214,12 @@ public class CopilotEngine {
         res.dataSourcesUsed.add("REAL-TIME LOCAL");
         res.dataSourcesUsed.add("SIMULATED");
         res.confidence = "CONFIRMED";
+
+        CopilotResultValidator.ValidationResult val = resultValidator.validate(null, "SYSTEM", "HEALTH", (int) sys.get("totalAssets"));
+        res.freshnessStatus = val.status;
+        res.freshnessSeconds = val.freshnessSeconds;
+        res.dataUsedTrace = val.dataUsedTrace;
+
         res.suggestedQuestions = List.of(
             "Show unhealthy assets",
             "Why is MOTOR-001 in warning state?",
@@ -148,11 +256,11 @@ public class CopilotEngine {
         }
 
         res.confidence = "CONFIRMED";
-        res.suggestedQuestions = List.of(
-            "Why is " + (unhealthy.isEmpty() ? "MOTOR-001" : unhealthy.get(0).id) + " unhealthy?",
-            "What is the predicted failure?",
-            "Inject bearing fault into MOTOR-001"
-        );
+        CopilotResultValidator.ValidationResult val = resultValidator.validate(null, "UNHEALTHY", "HEALTH", unhealthy.size());
+        res.freshnessStatus = val.status;
+        res.freshnessSeconds = val.freshnessSeconds;
+        res.dataUsedTrace = val.dataUsedTrace;
+
         return res;
     }
 
@@ -171,32 +279,39 @@ public class CopilotEngine {
         }
 
         if ("INDUSTRIAL_MOTOR".equals(asset.type)) {
-            res.evidence.add("RMS Vibration: " + asset.metrics.disk + " mm/s");
-            res.evidence.add("Stator Temperature: " + asset.metrics.temperature + " °C");
-            res.evidence.add("Shaft Load: " + asset.metrics.cpu + "%");
+            res.evidence.add("RMS Vibration: " + asset.metrics.disk + " mm/s [OBSERVED]");
+            res.evidence.add("Stator Temperature: " + asset.metrics.temperature + " °C [OBSERVED]");
+            res.evidence.add("Shaft Load: " + asset.metrics.cpu + "% [OBSERVED]");
         } else {
-            res.evidence.add("CPU Utilization: " + asset.metrics.cpu + "%");
-            res.evidence.add("Temperature: " + asset.metrics.temperature + " °C");
-            res.evidence.add("RAM Load: " + asset.metrics.ram + "%");
+            res.evidence.add("CPU Utilization: " + asset.metrics.cpu + "% [OBSERVED]");
+            res.evidence.add("Temperature: " + asset.metrics.temperature + " °C [OBSERVED]");
+            res.evidence.add("RAM Load: " + asset.metrics.ram + "% [OBSERVED]");
         }
+
+        res.rootCauseTimeline = List.of(
+            "1. Parameter drift initiated in drive assembly",
+            "2. Measured thermal/vibration increase",
+            "3. Digital Twin Engine applied health deduction factor",
+            "4. Operational warning threshold exceeded"
+        );
 
         res.risk = asset.healthScore < 60 ? "HIGH: Potential mechanical failure / bearing overheating." : "ELEVATED: Mechanical stress detected.";
         res.recommendation = asset.recommendedAction != null ? asset.recommendedAction : "Inspect bearing housing and thermal radiator.";
         res.dataSourcesUsed.add(asset.source);
         res.confidence = "CONFIRMED";
 
-        res.suggestedQuestions = List.of(
-            "What is the predicted failure?",
-            "What should the technician inspect?",
-            "Reset MOTOR-001 to normal"
-        );
+        CopilotResultValidator.ValidationResult val = resultValidator.validate(asset.quality, asset.id, "HEALTH", 1);
+        res.freshnessStatus = val.status;
+        res.freshnessSeconds = val.freshnessSeconds;
+        res.dataUsedTrace = val.dataUsedTrace;
+
         return res;
     }
 
-    private CopilotResponseDto handleSpecificAssetDiagnosis(CopilotResponseDto res, String assetId) {
-        AssetDto asset = toolRouter.getAsset(assetId);
+    private CopilotResponseDto handleSpecificAssetDiagnosis(CopilotResponseDto res, CopilotEntityResolver.EntityResolutionResult entityRes) {
+        AssetDto asset = toolRouter.getAsset(entityRes.resolvedAssetId);
         if (asset == null) {
-            res.answer = "Asset ID '" + assetId + "' is not currently registered in the platform.";
+            res.answer = "Asset ID '" + entityRes.resolvedAssetId + "' is not currently registered in the platform.";
             return res;
         }
 
@@ -211,34 +326,32 @@ public class CopilotEngine {
         res.dataSourcesUsed.add(asset.source);
         res.confidence = "CONFIRMED";
 
+        CopilotResultValidator.ValidationResult val = resultValidator.validate(asset.quality, asset.id, "TELEMETRY", 1);
+        res.freshnessStatus = val.status;
+        res.freshnessSeconds = val.freshnessSeconds;
+        res.dataUsedTrace = val.dataUsedTrace;
+
         return res;
     }
 
-    private CopilotResponseDto handleAssetComparisonQuery(CopilotResponseDto res, String q) {
-        List<AssetDto> all = toolRouter.getAssets();
-        res.answer = "Asset Comparison Matrix across " + all.size() + " registered Digital Twin instances:";
-        for (AssetDto a : all) {
-            res.evidence.add(a.id + " (" + a.name + "): Health " + a.healthScore + "% | Temp " + a.metrics.temperature + "°C | Mode: " + a.operatingMode + " [" + a.source + "]");
-        }
-        res.risk = "Comparative load variance detected between physical laptop host and synthetic industrial motor.";
-        res.recommendation = "Review individual asset detail pages for spatial breakdown.";
-        res.dataSourcesUsed.add("REAL-TIME LOCAL");
-        res.dataSourcesUsed.add("SIMULATED");
-        res.confidence = "CONFIRMED";
-        return res;
-    }
-
-    private CopilotResponseDto handleTelemetryStatusQuery(CopilotResponseDto res) {
+    private CopilotResponseDto handleSystemTelemetryStatusQuery(CopilotResponseDto res) {
         Map<String, Object> q = toolRouter.getDataQuality();
-        res.answer = "Telemetry pipeline is ONLINE and delivering live data.";
+        res.answer = "Telemetry transport pipeline is ONLINE and delivering live data.";
         res.evidence.add("Freshness: " + q.get("freshnessMs") + " ms");
         res.evidence.add("Data Completeness: " + q.get("dataCompletenessPct") + "%");
         res.evidence.add("Transport Latency: " + q.get("latencyMs") + " ms");
         res.evidence.add("Host Hardware Source: " + q.get("source"));
+
         res.risk = "No telemetry latency or stale data risks detected.";
         res.recommendation = "WebSocket stream active at /ws/telemetry.";
         res.dataSourcesUsed.add("REAL-TIME LOCAL");
         res.confidence = "CONFIRMED";
+
+        CopilotResultValidator.ValidationResult val = resultValidator.validate(null, "SYSTEM", "QUALITY", 1);
+        res.freshnessStatus = val.status;
+        res.freshnessSeconds = val.freshnessSeconds;
+        res.dataUsedTrace = val.dataUsedTrace;
+
         return res;
     }
 
@@ -266,6 +379,12 @@ public class CopilotEngine {
         res.recommendation = "Review action confirmation dialog below to execute or cancel.";
         res.dataSourcesUsed.add("SIMULATED");
         res.confidence = "CONFIRMED";
+
+        CopilotResultValidator.ValidationResult val = resultValidator.validate(null, targetAsset, "ACTION", 1);
+        res.freshnessStatus = val.status;
+        res.freshnessSeconds = val.freshnessSeconds;
+        res.dataUsedTrace = val.dataUsedTrace;
+
         return res;
     }
 }

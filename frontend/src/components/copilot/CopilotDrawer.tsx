@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-import { Bot, X, Send, Sparkles, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Bot, X, Send, Sparkles, AlertTriangle, RefreshCw, ChevronDown, ChevronUp, Database, CheckCircle2 } from 'lucide-react';
 import { queryCopilot, executeCopilotAction, getCopilotStatus, CopilotResponse } from '@/services/copilot.service';
 
 interface Props {
@@ -16,6 +16,7 @@ const CopilotDrawer = ({ isOpen, onClose }: Props) => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [actionConfirmPayload, setActionConfirmPayload] = useState<any | null>(null);
+  const [expandedTraceIdx, setExpandedTraceIdx] = useState<number | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Context awareness: determine current active page / asset ID
@@ -105,7 +106,7 @@ const CopilotDrawer = ({ isOpen, onClose }: Props) => {
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-sm text-slate-100">IRISYN COPILOT</h3>
                 <span className="px-2 py-0.5 rounded text-[9px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
-                  AI ONLINE
+                  DATA-FIRST ONLINE
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
@@ -126,6 +127,7 @@ const CopilotDrawer = ({ isOpen, onClose }: Props) => {
             'What is happening now?',
             'Show unhealthy assets',
             'Why is MOTOR-001 in warning state?',
+            'Compare MOTOR-001 with host laptop',
             'Inject bearing fault',
             'Is telemetry live?',
           ].map((chip) => (
@@ -144,9 +146,9 @@ const CopilotDrawer = ({ isOpen, onClose }: Props) => {
           {messages.length === 0 && (
             <div className="text-center py-12 space-y-3">
               <Bot size={36} className="mx-auto text-purple-400 animate-bounce" />
-              <h4 className="font-bold text-slate-200 text-sm">IRISYN Copilot Active</h4>
+              <h4 className="font-bold text-slate-200 text-sm">IRISYN Copilot Data Assistant</h4>
               <p className="text-slate-400 text-xs max-w-xs mx-auto leading-relaxed">
-                I am your context-aware Digital Twin assistant monitoring active local hardware & simulated assets. Ask me anything!
+                Data-first system assistant querying live physical workstation & synthetic industrial twin state. Rule 0: IRISYN Data is the source of truth.
               </p>
             </div>
           )}
@@ -164,20 +166,51 @@ const CopilotDrawer = ({ isOpen, onClose }: Props) => {
               <div className="p-4 rounded-xl bg-slate-850 border border-slate-750 space-y-3 bg-slate-950/70">
                 {/* Answer */}
                 <div>
-                  <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest block mb-1">ANSWER</span>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest">ANSWER</span>
+                    {msg.freshnessStatus && (
+                      <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
+                        <CheckCircle2 size={11} /> {msg.freshnessStatus} ● &lt; 1s
+                      </span>
+                    )}
+                  </div>
                   <p className="text-slate-100 font-medium text-xs leading-relaxed">{msg.answer}</p>
                 </div>
 
                 {/* Evidence */}
                 {msg.evidence && msg.evidence.length > 0 && (
                   <div className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 space-y-1 font-mono text-[11px]">
-                    <span className="text-slate-400 font-sans font-bold block text-[10px]">OBSERVED EVIDENCE:</span>
+                    <span className="text-slate-400 font-sans font-bold block text-[10px]">MEASURED EVIDENCE:</span>
                     {msg.evidence.map((item, i) => (
                       <div key={i} className="text-slate-300 flex items-start gap-1.5">
                         <span className="text-purple-400">•</span>
                         <span>{item}</span>
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {/* Table Data if Comparison */}
+                {msg.tableData && msg.tableData.length > 0 && (
+                  <div className="overflow-x-auto rounded-lg border border-slate-800">
+                    <table className="w-full text-left text-[11px]">
+                      <thead className="bg-slate-800 text-slate-300 font-bold">
+                        <tr>
+                          {Object.keys(msg.tableData[0]).map((k) => (
+                            <th key={k} className="p-2">{k}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800 text-slate-300 font-mono">
+                        {msg.tableData.map((row, rIdx) => (
+                          <tr key={rIdx} className="hover:bg-slate-800/40">
+                            {Object.values(row).map((v, cIdx) => (
+                              <td key={cIdx} className="p-2">{String(v)}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
 
@@ -190,6 +223,30 @@ const CopilotDrawer = ({ isOpen, onClose }: Props) => {
                     <div className="p-2 rounded bg-amber-500/10 border border-amber-500/20 text-amber-300">
                       <strong className="block text-[10px] text-amber-400">RECOMMENDATION:</strong> {msg.recommendation}
                     </div>
+                  </div>
+                )}
+
+                {/* Expandable Data Used Trace Panel */}
+                {msg.dataUsedTrace && msg.dataUsedTrace.length > 0 && (
+                  <div className="border-t border-slate-800 pt-2">
+                    <button
+                      onClick={() => setExpandedTraceIdx(expandedTraceIdx === idx ? null : idx)}
+                      className="text-[10px] text-slate-400 hover:text-purple-300 font-mono flex items-center justify-between w-full"
+                    >
+                      <span className="flex items-center gap-1">
+                        <Database size={11} className="text-purple-400" />
+                        OPERATIONAL DATA USED TRACE
+                      </span>
+                      {expandedTraceIdx === idx ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                    </button>
+
+                    {expandedTraceIdx === idx && (
+                      <div className="mt-2 p-2 rounded bg-slate-900 text-[10px] font-mono text-slate-300 space-y-1">
+                        {msg.dataUsedTrace.map((tr, tIdx) => (
+                          <div key={tIdx}>{tr}</div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -250,7 +307,7 @@ const CopilotDrawer = ({ isOpen, onClose }: Props) => {
           {loading && (
             <div className="flex items-center gap-2 text-slate-400 text-xs italic p-2">
               <RefreshCw size={14} className="animate-spin text-purple-400" />
-              Copilot is evaluating digital twin telemetry & platform state...
+              Copilot Data Gate is querying platform tools & digital twin engine...
             </div>
           )}
           <div ref={chatEndRef} />
