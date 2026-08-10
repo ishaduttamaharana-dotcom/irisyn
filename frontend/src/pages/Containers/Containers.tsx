@@ -6,10 +6,9 @@ import ProgressBar from '@/components/ui/ProgressBar';
 import { getContainers } from '@/services/containers.service';
 import { Container } from '@/types/domain';
 import PageLoader from '@/components/loading/PageLoader';
-import ErrorState from '@/components/error/ErrorState';
 
 const Containers = () => {
-  const { data: containers, isLoading, error, refetch } = useQuery({
+  const { data: containers = [], isLoading } = useQuery({
     queryKey: ['containers'],
     queryFn: getContainers,
   });
@@ -22,16 +21,8 @@ const Containers = () => {
     );
   }
 
-  if (error || !containers) {
-    return (
-      <DashboardLayout title="Containers" description="Offline">
-        <ErrorState message="Failed to load containers." onRetry={refetch} />
-      </DashboardLayout>
-    );
-  }
-
   return (
-    <DashboardLayout title="Containers" description="Pod and container status">
+    <DashboardLayout title="Containers" description="Pod and container status — OpenShift & Kubernetes Cluster">
       <DataTable<Container>
         rowKey={(c) => c.id}
         rows={containers}

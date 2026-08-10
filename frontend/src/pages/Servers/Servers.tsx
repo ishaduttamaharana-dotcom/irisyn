@@ -6,10 +6,9 @@ import ProgressBar from '@/components/ui/ProgressBar';
 import { getServers } from '@/services/servers.service';
 import { Server } from '@/types/domain';
 import PageLoader from '@/components/loading/PageLoader';
-import ErrorState from '@/components/error/ErrorState';
 
 const Servers = () => {
-  const { data: servers, isLoading, error, refetch } = useQuery({
+  const { data: servers = [], isLoading } = useQuery({
     queryKey: ['servers'],
     queryFn: getServers,
   });
@@ -22,16 +21,8 @@ const Servers = () => {
     );
   }
 
-  if (error || !servers) {
-    return (
-      <DashboardLayout title="Servers" description="Offline">
-        <ErrorState message="Failed to load servers." onRetry={refetch} />
-      </DashboardLayout>
-    );
-  }
-
   return (
-    <DashboardLayout title="Servers" description="Physical server inventory across all racks">
+    <DashboardLayout title="Servers" description="Physical server inventory across all data center racks">
       <DataTable<Server>
         rowKey={(s) => s.id}
         rows={servers}

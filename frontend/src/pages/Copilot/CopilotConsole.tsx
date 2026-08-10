@@ -38,7 +38,7 @@ const CopilotConsole = () => {
         setActionConfirmPayload(res.actionPayload);
       }
     } catch (e) {
-      // fallback
+      console.warn('Copilot backend query fallback:', e);
     } finally {
       setLoading(false);
     }
@@ -69,11 +69,12 @@ const CopilotConsole = () => {
       ]);
       setActionConfirmPayload(null);
     } catch (e) {
-      // fallback
+      console.warn('Copilot action execution fallback:', e);
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <DashboardLayout

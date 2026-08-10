@@ -147,3 +147,50 @@ export interface ChatResponse {
   sessionId: string;
   reply: string;
 }
+
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  role: 'ADMIN' | 'OPERATOR' | 'VIEWER' | 'ANALYST';
+  createdAt?: string;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  username: string;
+  role: string;
+}
+
+export interface AutomationLog {
+  id: string;
+  actionName: string;
+  targetId: string;
+  executedBy: string;
+  status: 'SUCCESS' | 'FAILED' | 'IN_PROGRESS';
+  timestamp: string;
+  details?: string;
+}
+
+export interface ServiceDirectoryItem {
+  id: string;
+  name: string;
+  type: string;
+  endpoint: string;
+  status: 'UP' | 'DOWN' | 'DEGRADED';
+  version: string;
+  latencyMs?: number;
+}
+
+export interface ServiceLineage {
+  sourceService: string;
+  targetService: string;
+  relationship: string;
+  protocol: string;
+}
+

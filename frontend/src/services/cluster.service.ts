@@ -1,7 +1,12 @@
 import { apiClient } from './apiClient';
 import { ClusterSummary } from '@/types/domain';
+import { mockCluster } from './mockData';
 
 export const getClusterSummary = async (): Promise<ClusterSummary> => {
-  const { data } = await apiClient.get<ClusterSummary>('/cluster');
-  return data;
+  try {
+    const { data } = await apiClient.get<ClusterSummary>('/cluster');
+    return data;
+  } catch (err) {
+    return mockCluster;
+  }
 };

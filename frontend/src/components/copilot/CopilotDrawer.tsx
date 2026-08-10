@@ -55,7 +55,7 @@ const CopilotDrawer = ({ isOpen, onClose }: Props) => {
         setActionConfirmPayload(res.actionPayload);
       }
     } catch (err) {
-      // fallback
+      console.warn('Copilot drawer query fallback:', err);
     } finally {
       setLoading(false);
     }
@@ -86,11 +86,12 @@ const CopilotDrawer = ({ isOpen, onClose }: Props) => {
       ]);
       setActionConfirmPayload(null);
     } catch (e) {
-      // fallback
+      console.warn('Copilot drawer action execution fallback:', e);
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/60 backdrop-blur-sm flex justify-end">
