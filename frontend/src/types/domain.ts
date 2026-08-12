@@ -145,6 +145,7 @@ export interface Asset {
   healthScore: number;
   healthBreakdown: Record<string, number>;
   operatingHours: number;
+  stateVersion?: number;
   metrics: TelemetryMetrics;
   sensors?: Sensor[];
   quality: DataQuality;

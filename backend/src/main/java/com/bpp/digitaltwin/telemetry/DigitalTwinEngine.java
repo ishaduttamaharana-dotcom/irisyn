@@ -10,10 +10,11 @@ import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Core Digital Twin Engine that bridges Physical State to Digital State, evaluates transparent health scores,
- * drives the 9-tier Operating Mode state machine, and maintains chronological state transition history.
+ * drives the 9-tier Operating Mode state machine, tracks stateVersions, and maintains connected resource graphs.
  */
 @ApplicationScoped
 public class DigitalTwinEngine {
@@ -30,6 +31,7 @@ public class DigitalTwinEngine {
     private final Map<String, AssetDto> assetRegistry = new ConcurrentHashMap<>();
     private final Map<String, String> previousModeMap = new ConcurrentHashMap<>();
     private final Map<String, List<Map<String, Object>>> historyMap = new ConcurrentHashMap<>();
+    private final Map<String, AtomicLong> stateVersionMap = new ConcurrentHashMap<>();
 
     public List<AssetDto> getAllAssets(String filterSource) {
         updateAllAssets();
@@ -56,6 +58,56 @@ public class DigitalTwinEngine {
                 "healthScore", 98
             )
         ));
+    }
+
+    public List<Map<String, Object>> getAssetTimeline(String id) {
+        AssetDto asset = assetRegistry.get(id);
+        if (asset == null) return List.of();
+
+        List<Map<String, Object>> timeline = new ArrayList<>();
+        timeline.add(Map.of(
+            "id", "TL-01",
+            "timestamp", asset.lastUpdated,
+            "type", "STATE_SYNC",
+            "title", "Digital Twin State Synchronized",
+            "description", "Twin state version #" + asset.stateVersion + " synchronized with physical hardware telemetry",
+            "severity", "INFO"
+        ));
+        timeline.add(Map.of(
+            "id", "TL-02",
+            "timestamp", Instant.now().minusSeconds(1200).toString(),
+            "type", "HEALTH_EVALUATION",
+            "title", "Health Model Evaluated",
+            "description", "Composite health score: " + asset.healthScore + "% (" + asset.status + ")",
+            "severity", asset.status.equals("HEALTHY") ? "INFO" : "WARNING"
+        ));
+        timeline.add(Map.of(
+            "id", "TL-03",
+            "timestamp", Instant.now().minusSeconds(3600).toString(),
+            "type", "MAINTENANCE",
+            "title", "Work Order Planned",
+            "description", "Scheduled work order WO-9041 linked to asset twin",
+            "severity", "INFO"
+        ));
+        return timeline;
+    }
+
+    public Map<String, Object> getAssetRelations(String id) {
+        AssetDto asset = assetRegistry.get(id);
+        if (asset == null) return Map.of();
+
+        return Map.of(
+            "assetId", asset.id,
+            "name", asset.name,
+            "parentLocation", asset.location,
+            "dependentAssets", "LAPTOP-001".equalsIgnoreCase(id) ? List.of("MOTOR-001") : List.of(),
+            "sensors", List.of("SENS-CPU-01", "SENS-RAM-01", "SENS-VIB-01", "SENS-NET-01"),
+            "telemetryStreams", List.of("/ws/telemetry", "/ws/twins"),
+            "alerts", asset.status.equalsIgnoreCase("HEALTHY") ? List.of() : List.of("ALT-501"),
+            "anomalies", asset.healthScore < 80 ? List.of("ANOM-01") : List.of(),
+            "predictions", List.of("PRED-101"),
+            "maintenance", List.of("WO-9041")
+        );
     }
 
     public synchronized void updateAllAssets() {
@@ -86,6 +138,7 @@ public class DigitalTwinEngine {
         cnc.healthScore = 0;
         cnc.healthBreakdown.put("Gateway Disconnected", 0);
         cnc.operatingHours = 0.0;
+        cnc.stateVersion = 1L;
         cnc.lastUpdated = Instant.now().toString();
         cnc.recommendedAction = "Target architecture for future PLC / OPC-UA integration";
         cnc.lastMaintenanceDate = "2026-01-10";
@@ -113,6 +166,9 @@ public class DigitalTwinEngine {
         asset.lastMaintenanceDate = "2026-05-15";
         asset.nextMaintenanceDate = "2026-11-15";
         asset.maintenanceStatus = "OK";
+
+        AtomicLong versionCounter = stateVersionMap.computeIfAbsent(asset.id, k -> new AtomicLong(12L));
+        asset.stateVersion = versionCounter.get();
 
         // Retrieve Dynamic Health Model Weights
         Map<String, Object> weights = configService.getHealthWeights();
@@ -189,13 +245,17 @@ public class DigitalTwinEngine {
         }
         asset.operatingMode = newMode;
 
-        // Record State Transitions
+        // Record Meaningful State Transitions & Increment State Version
         String prevMode = previousModeMap.get(asset.id);
         if (prevMode != null && !prevMode.equalsIgnoreCase(newMode)) {
+            long newVer = versionCounter.incrementAndGet();
+            asset.stateVersion = newVer;
+
             List<Map<String, Object>> historyList = historyMap.computeIfAbsent(asset.id, k -> new ArrayList<>());
             historyList.add(0, Map.of(
                 "timestamp", Instant.now().toString(),
                 "assetId", asset.id,
+                "stateVersion", newVer,
                 "previousMode", prevMode,
                 "newMode", newMode,
                 "triggerReason", "Telemetry threshold evaluation (Health: " + asset.healthScore + "%)",

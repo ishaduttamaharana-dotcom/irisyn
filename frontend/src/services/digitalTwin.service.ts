@@ -4,6 +4,7 @@ import { Asset } from '@/types/domain';
 export interface TwinStateHistoryItem {
   timestamp: string;
   assetId: string;
+  stateVersion?: number;
   previousMode: string;
   newMode: string;
   triggerReason: string;
@@ -16,6 +17,28 @@ export interface TwinSensorItem {
   type: string;
   status: 'CONNECTED' | 'STALE' | 'OFFLINE' | 'DEGRADED' | 'ERROR';
   health: number;
+}
+
+export interface TwinTimelineItem {
+  id: string;
+  timestamp: string;
+  type: string;
+  title: string;
+  description: string;
+  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+}
+
+export interface TwinRelations {
+  assetId: string;
+  name: string;
+  parentLocation: string;
+  dependentAssets: string[];
+  sensors: string[];
+  telemetryStreams: string[];
+  alerts: string[];
+  anomalies: string[];
+  predictions: string[];
+  maintenance: string[];
 }
 
 export const getDigitalTwins = async (source?: string): Promise<Asset[]> => {
@@ -36,6 +59,15 @@ export const getDigitalTwin = async (id: string): Promise<Asset | null> => {
   }
 };
 
+export const getDigitalTwinState = async (id: string): Promise<any> => {
+  try {
+    const response = await apiClient.get(`/twins/${id}/state`);
+    return response.data;
+  } catch (err) {
+    return null;
+  }
+};
+
 export const getDigitalTwinHistory = async (id: string): Promise<TwinStateHistoryItem[]> => {
   try {
     const response = await apiClient.get<TwinStateHistoryItem[]>(`/twins/${id}/history`);
@@ -45,12 +77,31 @@ export const getDigitalTwinHistory = async (id: string): Promise<TwinStateHistor
       {
         timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
         assetId: id,
+        stateVersion: 12,
         previousMode: 'IDLE',
         newMode: 'RUNNING',
         triggerReason: 'System initialization & state engine sync',
         healthScore: 98,
       },
     ];
+  }
+};
+
+export const getDigitalTwinTimeline = async (id: string): Promise<TwinTimelineItem[]> => {
+  try {
+    const response = await apiClient.get<TwinTimelineItem[]>(`/twins/${id}/timeline`);
+    return response.data;
+  } catch (err) {
+    return [];
+  }
+};
+
+export const getDigitalTwinRelations = async (id: string): Promise<TwinRelations | null> => {
+  try {
+    const response = await apiClient.get<TwinRelations>(`/twins/${id}/relations`);
+    return response.data;
+  } catch (err) {
+    return null;
   }
 };
 

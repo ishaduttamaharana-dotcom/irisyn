@@ -20,6 +20,7 @@ public class AssetDto {
     public int healthScore;         // 0-100%
     public Map<String, Integer> healthBreakdown;
     public double operatingHours;
+    public long stateVersion;       // Monotonically incremented counter on meaningful state changes
     public TelemetryMetricsDto metrics;
     public DataQualityDto quality;
     public String lastUpdated;
@@ -34,5 +35,6 @@ public class AssetDto {
         this.healthBreakdown = new HashMap<>();
         this.metrics = new TelemetryMetricsDto();
         this.quality = new DataQualityDto();
+        this.stateVersion = 1L;
     }
 }

@@ -45,6 +45,31 @@ public class DigitalTwinResource {
     }
 
     @GET
+    @Path("/{id}/state")
+    @Operation(summary = "Get compact Digital Twin state with stateVersion, freshness, and operating mode")
+    public Response getDigitalTwinState(@PathParam("id") String id) {
+        AssetDto twin = digitalTwinEngine.getAssetById(id);
+        if (twin == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity(new ApiErrorDto("TWIN_NOT_FOUND", "Digital Twin for asset " + id + " was not found."))
+                .build();
+        }
+
+        Map<String, Object> statePayload = Map.of(
+            "assetId", twin.id,
+            "source", twin.source,
+            "state", twin.status,
+            "operatingMode", twin.operatingMode,
+            "stateVersion", twin.stateVersion,
+            "metrics", twin.metrics,
+            "health", Map.of("score", twin.healthScore),
+            "freshness", Map.of("status", twin.quality.status, "lastUpdate", twin.lastUpdated),
+            "quality", twin.quality
+        );
+        return Response.ok(ApiResponseDto.of(statePayload, twin.source)).build();
+    }
+
+    @GET
     @Path("/{id}/history")
     @Operation(summary = "Get chronological state transition history timeline for a digital twin")
     public Response getDigitalTwinHistory(@PathParam("id") String id) {
@@ -56,6 +81,34 @@ public class DigitalTwinResource {
         }
         List<Map<String, Object>> history = digitalTwinEngine.getAssetHistory(id);
         return Response.ok(ApiResponseDto.of(history, twin.source)).build();
+    }
+
+    @GET
+    @Path("/{id}/timeline")
+    @Operation(summary = "Get human-readable operational events timeline for a digital twin")
+    public Response getDigitalTwinTimeline(@PathParam("id") String id) {
+        AssetDto twin = digitalTwinEngine.getAssetById(id);
+        if (twin == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity(new ApiErrorDto("TWIN_NOT_FOUND", "Digital Twin for asset " + id + " was not found."))
+                .build();
+        }
+        List<Map<String, Object>> timeline = digitalTwinEngine.getAssetTimeline(id);
+        return Response.ok(ApiResponseDto.of(timeline, twin.source)).build();
+    }
+
+    @GET
+    @Path("/{id}/relations")
+    @Operation(summary = "Get connected Digital Twin resource graph (linked sensors, alerts, maintenance, dependencies)")
+    public Response getDigitalTwinRelations(@PathParam("id") String id) {
+        AssetDto twin = digitalTwinEngine.getAssetById(id);
+        if (twin == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity(new ApiErrorDto("TWIN_NOT_FOUND", "Digital Twin for asset " + id + " was not found."))
+                .build();
+        }
+        Map<String, Object> relations = digitalTwinEngine.getAssetRelations(id);
+        return Response.ok(ApiResponseDto.of(relations, twin.source)).build();
     }
 
     @GET
@@ -91,10 +144,12 @@ public class DigitalTwinResource {
         }
         String newMode = payload.getOrDefault("mode", "RUNNING");
         twin.operatingMode = newMode;
+        twin.stateVersion += 1;
 
         Map<String, Object> result = Map.of(
             "assetId", id,
             "operatingMode", newMode,
+            "stateVersion", twin.stateVersion,
             "updatedAt", Instant.now().toString(),
             "status", "UPDATED"
         );
