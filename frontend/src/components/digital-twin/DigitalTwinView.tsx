@@ -26,6 +26,8 @@ const getStatusColorClass = (status: string) => {
   }
 };
 
+import DataSourceBadge from '../ui/DataSourceBadge';
+
 const DigitalTwinView = () => {
   const [selectedServer, setSelectedServer] = useState<Server | null>(null);
   
@@ -87,10 +89,11 @@ const DigitalTwinView = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <h3 className="text-base font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
           <Activity size={18} className="text-brand-500 animate-pulse" />
-          Interactive 3D-Twin Racks
+          <span>Interactive 3D-Twin Racks</span>
+          <DataSourceBadge source="REAL-TIME LOCAL" size="sm" />
         </h3>
         <span className="text-xs text-slate-400">Click any server block to inspect live resource metrics</span>
       </div>

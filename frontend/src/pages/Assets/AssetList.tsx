@@ -5,6 +5,7 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 import { Cpu, Activity, ArrowRight } from 'lucide-react';
 import { getAssets } from '@/services/assets.service';
 import SimulationControlBar from '@/components/simulation/SimulationControlBar';
+import DataSourceBadge from '@/components/ui/DataSourceBadge';
 import Badge from '@/components/ui/Badge';
 import ProgressBar from '@/components/ui/ProgressBar';
 
@@ -80,17 +81,7 @@ const AssetList = () => {
                   {/* Source Badge */}
                   <div className="mt-4 flex items-center justify-between">
                     <span className="text-xs text-slate-400">Data Source:</span>
-                    <span
-                      className={`px-2.5 py-0.5 rounded text-[10px] font-bold border ${
-                        asset.source === 'REAL-TIME LOCAL'
-                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                          : asset.source === 'SIMULATED'
-                          ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
-                          : 'bg-slate-800 text-slate-400 border-slate-700'
-                      }`}
-                    >
-                      {asset.source}
-                    </span>
+                    <DataSourceBadge source={asset.source} size="sm" />
                   </div>
 
                   {/* Health Score Gauge Bar */}

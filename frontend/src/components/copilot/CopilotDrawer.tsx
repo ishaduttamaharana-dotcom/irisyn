@@ -181,7 +181,12 @@ const CopilotDrawer = ({ isOpen, onClose }: Props) => {
                 {/* Evidence */}
                 {msg.evidence && msg.evidence.length > 0 && (
                   <div className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 space-y-1 font-mono text-[11px]">
-                    <span className="text-slate-400 font-sans font-bold block text-[10px]">MEASURED EVIDENCE:</span>
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="text-slate-400 font-sans font-bold block">MEASURED EVIDENCE:</span>
+                      <span className="px-1.5 py-0.2 rounded font-bold uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                        OBSERVED
+                      </span>
+                    </div>
                     {msg.evidence.map((item, i) => (
                       <div key={i} className="text-slate-300 flex items-start gap-1.5">
                         <span className="text-purple-400">•</span>

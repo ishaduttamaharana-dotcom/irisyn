@@ -8,21 +8,23 @@ import Login from './pages/Login/Login';
 import Dashboard from './pages/Dashboard/Dashboard';
 import AssetList from './pages/Assets/AssetList';
 import AssetDetail from './pages/Assets/AssetDetail';
+import DigitalTwinView from './pages/DigitalTwin/DigitalTwinView';
 import TelemetryView from './pages/Telemetry/TelemetryView';
 import CopilotConsole from './pages/Copilot/CopilotConsole';
 import Architecture from './pages/Architecture/Architecture';
 import DataSources from './pages/DataSources/DataSources';
-import Servers from './pages/Servers/Servers';
-import Infrastructure from './pages/Infrastructure/Infrastructure';
-import VirtualMachines from './pages/VirtualMachines/VirtualMachines';
-import Containers from './pages/Containers/Containers';
-import AIInsights from './pages/AIInsights/AIInsights';
 import Automation from './pages/Automation/Automation';
+import IncidentsView from './pages/Incidents/IncidentsView';
+import MaintenanceView from './pages/Maintenance/MaintenanceView';
+import PredictionsView from './pages/Predictions/PredictionsView';
+import SimulationView from './pages/Simulation/SimulationView';
 import Security from './pages/Security/Security';
-import Cluster from './pages/Cluster/Cluster';
 import Settings from './pages/Settings/Settings';
+import DiagnosticsView from './pages/Diagnostics/DiagnosticsView';
+import IntegrationsView from './pages/Integrations/IntegrationsView';
+import LogsView from './pages/Logs/LogsView';
+import ReportsView from './pages/Reports/ReportsView';
 import AccessCenter from './pages/Access/AccessCenter';
-import ServicesDirectory from './pages/Services/ServicesDirectory';
 
 const App = () => {
   return (
@@ -34,25 +36,24 @@ const App = () => {
             <Route element={<AppLayout />}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/access-center" element={<AccessCenter />} />
-              <Route path="/services" element={<ServicesDirectory />} />
               <Route path="/copilot" element={<CopilotConsole />} />
               <Route path="/assets" element={<AssetList />} />
               <Route path="/assets/:id" element={<AssetDetail />} />
+              <Route path="/digital-twin" element={<DigitalTwinView />} />
               <Route path="/telemetry" element={<TelemetryView />} />
+              <Route path="/alerts" element={<Automation />} />
+              <Route path="/incidents" element={<IncidentsView />} />
+              <Route path="/maintenance" element={<MaintenanceView />} />
+              <Route path="/predictions" element={<PredictionsView />} />
+              <Route path="/simulation" element={<SimulationView />} />
+              <Route path="/security" element={<Security />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/diagnostics" element={<DiagnosticsView />} />
+              <Route path="/integrations" element={<IntegrationsView />} />
+              <Route path="/logs" element={<LogsView />} />
+              <Route path="/reports" element={<ReportsView />} />
               <Route path="/architecture" element={<Architecture />} />
               <Route path="/data-sources" element={<DataSources />} />
-              <Route path="/servers" element={<Servers />} />
-              <Route path="/infrastructure" element={<Infrastructure />} />
-              <Route path="/virtual-machines" element={<VirtualMachines />} />
-              <Route path="/containers" element={<Containers />} />
-              <Route path="/ai-insights" element={<AIInsights />} />
-              <Route path="/maintenance" element={<AIInsights />} />
-              <Route path="/analytics" element={<AIInsights />} />
-              <Route path="/alerts" element={<Automation />} />
-              <Route path="/automation" element={<Automation />} />
-              <Route path="/security" element={<Security />} />
-              <Route path="/cluster" element={<Cluster />} />
-              <Route path="/settings" element={<Settings />} />
             </Route>
           </Route>
         </Routes>

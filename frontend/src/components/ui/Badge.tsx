@@ -1,22 +1,77 @@
-import clsx from 'clsx';
 import React from 'react';
+import { CheckCircle2, AlertTriangle, AlertOctagon, WifiOff, Info } from 'lucide-react';
+import clsx from 'clsx';
 
-const TONE_MAP: Record<string, string> = {
-  HEALTHY: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-700/20 dark:text-emerald-300',
-  RUNNING: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-700/20 dark:text-emerald-300',
-  WARNING: 'bg-amber-100 text-amber-700 dark:bg-amber-700/20 dark:text-amber-300',
-  PENDING: 'bg-amber-100 text-amber-700 dark:bg-amber-700/20 dark:text-amber-300',
-  CRITICAL: 'bg-red-100 text-red-700 dark:bg-red-700/20 dark:text-red-300',
-  CRASHLOOP: 'bg-red-100 text-red-700 dark:bg-red-700/20 dark:text-red-300',
-  OFFLINE: 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
-  STOPPED: 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
-  INFO: 'bg-sky-100 text-sky-700 dark:bg-sky-700/20 dark:text-sky-300',
+interface BadgeProps {
+  status: string;
+  size?: 'sm' | 'md';
+  children?: React.ReactNode;
+  className?: string;
+}
+
+export const Badge: React.FC<BadgeProps> = ({
+  status,
+  size = 'md',
+  children,
+  className = '',
+}) => {
+  const norm = status?.toUpperCase() || 'UNKNOWN';
+
+  let baseStyles = 'inline-flex items-center gap-1.5 font-bold uppercase tracking-wider rounded-md transition-colors border';
+  if (size === 'sm') {
+    baseStyles += ' px-2 py-0.5 text-[10px]';
+  } else {
+    baseStyles += ' px-2.5 py-1 text-xs';
+  }
+
+  if (norm === 'HEALTHY' || norm === 'RUNNING' || norm === 'ONLINE') {
+    return (
+      <span className={clsx(baseStyles, 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30', className)}>
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+        <span>{children ?? norm}</span>
+      </span>
+    );
+  }
+
+  if (norm === 'WARNING' || norm === 'PENDING' || norm === 'DEGRADATION') {
+    return (
+      <span className={clsx(baseStyles, 'bg-amber-500/10 text-amber-400 border-amber-500/30', className)}>
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+        <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+        <span>{children ?? norm}</span>
+      </span>
+    );
+  }
+
+  if (norm === 'CRITICAL' || norm === 'CRASHLOOP' || norm === 'FAULT') {
+    return (
+      <span className={clsx(baseStyles, 'bg-red-500/10 text-red-400 border-red-500/30', className)}>
+        <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+        <AlertOctagon className="w-3.5 h-3.5 text-red-400" />
+        <span>{children ?? norm}</span>
+      </span>
+    );
+  }
+
+  if (norm === 'INFO') {
+    return (
+      <span className={clsx(baseStyles, 'bg-sky-500/10 text-sky-300 border-sky-500/30', className)}>
+        <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+        <Info className="w-3.5 h-3.5 text-sky-300" />
+        <span>{children ?? norm}</span>
+      </span>
+    );
+  }
+
+  // OFFLINE / STOPPED / UNKNOWN
+  return (
+    <span className={clsx(baseStyles, 'bg-slate-800/80 text-slate-400 border-slate-700', className)}>
+      <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+      <WifiOff className="w-3.5 h-3.5 text-slate-400" />
+      <span>{children ?? norm}</span>
+    </span>
+  );
 };
-
-const Badge = ({ status, children }: { status: string; children?: React.ReactNode }) => (
-  <span className={clsx('inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', TONE_MAP[status] ?? TONE_MAP.OFFLINE)}>
-    {children ?? status}
-  </span>
-);
 
 export default Badge;

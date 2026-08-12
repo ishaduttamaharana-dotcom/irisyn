@@ -6,10 +6,14 @@ import { useAuth } from '@/context/AuthContext';
 import CopilotDrawer from '@/components/copilot/CopilotDrawer';
 import UniversalCommandBar from '@/components/common/UniversalCommandBar';
 
+import SystemHealthHeader from '@/components/common/SystemHealthHeader';
+import { useSystemInfo } from '@/hooks/usePlatformData';
+
 const Navbar = () => {
   const { theme, toggleTheme } = useTheme();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { data: systemInfo, isLoading: isSystemLoading, isError: isSystemError } = useSystemInfo();
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const [isCommandBarOpen, setIsCommandBarOpen] = useState(false);
 
@@ -27,8 +31,8 @@ const Navbar = () => {
   return (
     <>
       <header className="h-16 flex items-center justify-between px-4 md:px-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-        {/* Left Branding & Title */}
-        <div className="flex items-center gap-3">
+        {/* Left Branding & System Health Header */}
+        <div className="flex items-center gap-4">
           <button className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800" aria-label="Open menu">
             <Menu size={20} />
           </button>
@@ -36,9 +40,13 @@ const Navbar = () => {
           <h1 className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
             <span className="text-purple-600 dark:text-purple-400 font-extrabold tracking-wide">IRISYN</span>
             <span className="hidden sm:inline text-slate-400 font-normal">|</span>
-            <span className="hidden sm:inline text-slate-600 dark:text-slate-300 font-medium">SEE • PREDICT • ACT Platform</span>
+            <span className="hidden sm:inline text-slate-600 dark:text-slate-300 font-medium">SEE • PREDICT • ACT</span>
           </h1>
+
+          {/* System Info Header Badge */}
+          <SystemHealthHeader systemInfo={systemInfo} isLoading={isSystemLoading} isError={isSystemError} />
         </div>
+
 
         {/* Center Universal Search Bar Trigger */}
         <div className="flex-1 max-w-md mx-4 hidden md:block">

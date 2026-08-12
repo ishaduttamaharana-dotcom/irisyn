@@ -11,6 +11,7 @@ spec:
   strategy:
     type: Docker
     dockerStrategy:
+    
       dockerfilePath: Containerfile
   output:
     to:

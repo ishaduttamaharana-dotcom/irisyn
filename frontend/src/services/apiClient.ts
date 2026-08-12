@@ -25,13 +25,27 @@ apiClient.interceptors.request.use((config) => {
 });
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // If response body uses standard IRISYN envelope { data: ..., meta: ... }, unwrap payload
+    if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+      const envelope = response.data as { data: any; meta?: any };
+      // Attach meta to returned object if applicable
+      const payload = envelope.data;
+      if (payload && typeof payload === 'object' && !Array.isArray(payload) && envelope.meta) {
+        payload._meta = envelope.meta;
+      }
+      return { ...response, data: payload };
+    }
+    return response;
+  },
   (error: AxiosError) => {
-    // Centralized error normalization; UI layer decides how to display it.
+    // Standard error envelope extraction: { error: { code, message } }
+    const responseData = error.response?.data as { error?: { code?: string; message?: string }; message?: string } | undefined;
     const message =
-      (error.response?.data as { message?: string } | undefined)?.message ??
+      responseData?.error?.message ??
+      responseData?.message ??
       error.message ??
-      'Unexpected error contacting the API';
+      'Unexpected error contacting the IRISYN platform API';
     return Promise.reject(new Error(message));
   }
 );
