@@ -12,9 +12,9 @@ Phase 2: Data & Telemetry (COMPLETE)
   ↓
 Phase 3: Digital Twin Core (COMPLETE)
   ↓
-Phase 4: Intelligence & Analytics (NEXT)
+Phase 4: Intelligence & Analytics (COMPLETE)
   ↓
-Phase 5: Copilot AI System
+Phase 5: Copilot AI System (NEXT)
   ↓
 Phase 6: Security & Control (RBAC)
   ↓
@@ -45,20 +45,22 @@ Phase 8: Industrial Readiness (MQTT, OPC-UA, Red Hat Edge, OpenShift AI)
 ### Phase 3 — Digital Twin Core (STATUS: COMPLETED)
 - **Priority**: Critical
 - **Objective**: Persistent Digital Twin state engine, physical-to-digital state synchronization, 9-tier operating mode state machine (`OFFLINE`, `IDLE`, `STARTING`, `RUNNING`, `HIGH_LOAD`, `DEGRADED`, `FAULT`, `MAINTENANCE`, `UNKNOWN`), stateVersion tracking, connected resource graph (`/relations`), human-readable timeline (`/timeline`), and real-time `/ws/twins` streaming.
-- **Exit Criteria**:
-  - [x] Asset has persistent digital twin state & stateVersion.
-  - [x] Telemetry dynamically updates twin state & drives operating mode transitions.
-  - [x] 3-tier history model (raw telemetry, twin state transitions, operational timeline) separated.
-  - [x] Connected resource graph relations exposed (`GET /api/twins/:id/relations`).
-  - [x] Real-time `/ws/twins` streaming active.
-  - [x] Documentation & unit tests ([docs/PHASE3_DIGITAL_TWIN.md](file:///c:/Users/ACER/Downloads/project-root/docs/PHASE3_DIGITAL_TWIN.md) & `DigitalTwinStateTest.java`).
+- **Exit Criteria**: Persistent digital twin state & stateVersion; dynamic operating mode transitions; 3-tier history model; resource graph exposed; real-time `/ws/twins` active.
 
-### Phase 4 — Intelligence (STATUS: NEXT)
+### Phase 4 — Intelligence (STATUS: COMPLETED)
 - **Priority**: High
-- **Objective**: Statistical anomaly detection (Z-score), explainable health factor breakdown, baseline drift engine, failure probability predictions.
-- **Exit Criteria**: Health score calculated deterministically; anomalies supported by measured evidence; insufficient telemetry handled honestly.
+- **Objective**: Five major intelligence services: Feature/Baseline Engine (rolling mean, stddev, Z-score $\sigma$), Deterministic Health Engine, Statistical Anomaly Detection Engine ($|Z| > 2.5$), Trend Analysis Engine, Prediction Engine (risk scores, confidence, horizons), and Evidence/Explainability Audit Panel (`OBSERVED`, `INFERRED`, `PREDICTED`).
+- **Exit Criteria**:
+  - [x] Deterministic health score generated from real inputs with contributor penalties.
+  - [x] Feature/Baseline Engine calculates Z-score ($\sigma$) deviations.
+  - [x] Anomaly Engine identifies statistical anomalies with evidence payloads.
+  - [x] Trend Engine derives metric trajectory directions (`RISING`, `FALLING`, `STABLE`).
+  - [x] Prediction Engine computes failure probability risk vectors with confidence & horizon.
+  - [x] Evidence audit trail tags outputs with `OBSERVED`, `INFERRED`, or `PREDICTED`.
+  - [x] Automated unit test suite passing ([IntelligenceEngineTest.java](file:///c:/Users/ACER/Downloads/project-root/backend/src/test/java/com/bpp/digitaltwin/IntelligenceEngineTest.java)).
+  - [x] Documentation complete ([docs/PHASE4_INTELLIGENCE.md](file:///c:/Users/ACER/Downloads/project-root/docs/PHASE4_INTELLIGENCE.md)).
 
-### Phase 5 — Copilot
+### Phase 5 — Copilot (STATUS: NEXT)
 - **Priority**: Critical
 - **Objective**: AI Copilot query router, entity/time resolver, mandatory tool query data gate, operational data-access traces (`Source`, `Asset`, `Metric`, `Freshness`, `Quality`), inference tags (`OBSERVED`, `INFERRED`, `PREDICTED`), consequential write confirmation modals.
 - **Exit Criteria**: Live system questions query actual APIs; zero LLM hallucination of system values; write actions require confirmation.
