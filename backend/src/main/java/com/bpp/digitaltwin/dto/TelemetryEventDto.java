@@ -6,6 +6,7 @@ public class TelemetryEventDto {
     public String assetType;   // LAPTOP, SERVER, MOTOR, PUMP, CNC_MACHINE
     public String source;      // REAL-TIME LOCAL, SIMULATED, TARGET / FUTURE
     public String timestamp;
+    public long sequenceNumber;
     public String operatingSystem;
     public String cpuModel;
     public int coreCount;

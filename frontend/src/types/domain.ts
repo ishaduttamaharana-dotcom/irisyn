@@ -93,6 +93,8 @@ export interface DataQuality {
   completenessPct: number;
   latencyMs: number;
   status: 'GOOD' | 'STALE' | 'DEGRADED' | 'BUFFERED';
+  sequenceIntegrity?: string;
+  sequenceGapsDetected?: number;
 }
 
 export interface AssetHealth {
