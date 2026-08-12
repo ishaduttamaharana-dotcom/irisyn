@@ -51,7 +51,19 @@ export type AssetType =
   | 'EDGE_GATEWAY';
 
 export type ServerStatus = 'HEALTHY' | 'WARNING' | 'CRITICAL' | 'OFFLINE';
-export type AssetOperatingMode = 'NORMAL' | 'HIGH_LOAD' | 'DEGRADATION' | 'FAULT' | 'DISCONNECTED';
+export type AssetOperatingMode = 
+  | 'OFFLINE' 
+  | 'IDLE' 
+  | 'STARTING' 
+  | 'RUNNING' 
+  | 'HIGH_LOAD' 
+  | 'DEGRADED' 
+  | 'DEGRADATION' 
+  | 'FAULT' 
+  | 'MAINTENANCE' 
+  | 'NORMAL' 
+  | 'DISCONNECTED' 
+  | 'UNKNOWN';
 
 export interface Sensor {
   id: string;
@@ -124,7 +136,10 @@ export interface Asset {
   source: AssetSource;
   manufacturer: string;
   model: string;
+  serialNumber?: string;
   location: string;
+  installationDate?: string;
+  configVersion?: string;
   status: ServerStatus;
   operatingMode: AssetOperatingMode;
   healthScore: number;
@@ -137,6 +152,9 @@ export interface Asset {
   activeAlerts?: string[];
   currentPrediction?: string;
   recommendedAction?: string;
+  lastMaintenanceDate?: string;
+  nextMaintenanceDate?: string;
+  maintenanceStatus?: string;
 }
 
 export interface MetricPoint {

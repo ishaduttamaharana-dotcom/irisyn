@@ -32,6 +32,22 @@ public class TelemetryResource {
     @Inject
     FreshnessService freshnessService;
 
+    @POST
+    @Operation(summary = "Ingest a new telemetry event frame")
+    public Response ingestTelemetry(TelemetryEventDto rawEvent) {
+        TelemetryEventDto validatedEvent = telemetryValidator.validateAndEnrich(rawEvent);
+        Map<String, Object> response = Map.of(
+            "status", validatedEvent.quality.valid ? "INGESTED" : "FLAGGED",
+            "assetId", validatedEvent.assetId != null ? validatedEvent.assetId : "UNKNOWN",
+            "sequenceNumber", validatedEvent.sequenceNumber,
+            "timestamp", validatedEvent.timestamp,
+            "quality", validatedEvent.quality
+        );
+        return Response.status(validatedEvent.quality.valid ? Response.Status.CREATED : Response.Status.ACCEPTED)
+                .entity(ApiResponseDto.of(response, validatedEvent.source != null ? validatedEvent.source : "REAL-TIME LOCAL"))
+                .build();
+    }
+
     @GET
     @Path("/live")
     @Operation(summary = "Get current live telemetry snapshot for local host computer with validation and freshness SLA")

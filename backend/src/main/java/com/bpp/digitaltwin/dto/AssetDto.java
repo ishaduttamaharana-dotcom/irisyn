@@ -7,13 +7,16 @@ import java.util.Map;
 public class AssetDto {
     public String id;
     public String name;
-    public String type;             // LAPTOP, SERVER, MOTOR, PUMP, CNC_MACHINE
+    public String type;             // LAPTOP, SERVER, INDUSTRIAL_MOTOR, PUMP, CNC_MACHINE
     public String source;           // REAL-TIME LOCAL, SIMULATED, TARGET / FUTURE
     public String manufacturer;
     public String model;
+    public String serialNumber;
     public String location;
+    public String installationDate;
+    public String configVersion;
     public String status;           // HEALTHY, WARNING, CRITICAL, OFFLINE
-    public String operatingMode;     // NORMAL, HIGH_LOAD, DEGRADATION, FAULT
+    public String operatingMode;    // OFFLINE, IDLE, STARTING, RUNNING, HIGH_LOAD, DEGRADED, FAULT, MAINTENANCE, UNKNOWN
     public int healthScore;         // 0-100%
     public Map<String, Integer> healthBreakdown;
     public double operatingHours;
@@ -23,6 +26,9 @@ public class AssetDto {
     public List<String> activeAlerts;
     public String currentPrediction;
     public String recommendedAction;
+    public String lastMaintenanceDate;
+    public String nextMaintenanceDate;
+    public String maintenanceStatus; // OK, DUE_SOON, OVERDUE, SCHEDULED
 
     public AssetDto() {
         this.healthBreakdown = new HashMap<>();
