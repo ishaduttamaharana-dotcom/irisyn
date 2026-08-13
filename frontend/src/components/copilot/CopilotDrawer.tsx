@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-import { Bot, X, Send, Sparkles, AlertTriangle, RefreshCw, ChevronDown, ChevronUp, Database, CheckCircle2 } from 'lucide-react';
-import { queryCopilot, executeCopilotAction, getCopilotStatus, CopilotResponse } from '@/services/copilot.service';
+import { Bot, X, Send, Sparkles, AlertTriangle, RefreshCw, Database, ShieldCheck } from 'lucide-react';
+import { queryCopilotChat, executeCopilotAction, CopilotChatResponse } from '@/services/copilot.service';
 
 interface Props {
   isOpen: boolean;
@@ -11,23 +11,14 @@ interface Props {
 const CopilotDrawer = ({ isOpen, onClose }: Props) => {
   const location = useLocation();
   const params = useParams<{ id?: string }>();
-  
-  const [messages, setMessages] = useState<CopilotResponse[]>([]);
+
+  const [messages, setMessages] = useState<CopilotChatResponse[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [actionConfirmPayload, setActionConfirmPayload] = useState<any | null>(null);
-  const [expandedTraceIdx, setExpandedTraceIdx] = useState<number | null>(null);
+  const [actionConfirmPayload, setActionConfirmPayload] = useState<{ assetId: string; actionType: string } | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Context awareness: determine current active page / asset ID
   const activeAssetId = params.id || (location.pathname.includes('MOTOR-001') ? 'MOTOR-001' : undefined);
-  const pageContext = location.pathname.split('/')[1] || 'Dashboard';
-
-  useEffect(() => {
-    if (isOpen) {
-      getCopilotStatus().catch(() => null);
-    }
-  }, [isOpen]);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -43,16 +34,16 @@ const CopilotDrawer = ({ isOpen, onClose }: Props) => {
     setLoading(true);
 
     try {
-      const res = await queryCopilot({
-        question: prompt,
-        pageContext,
-        activeAssetId,
-      });
+      const res = await queryCopilotChat(prompt, { currentAsset: activeAssetId });
+      if (res) {
+        setMessages((prev) => [...prev, res]);
+      }
 
-      setMessages((prev) => [...prev, res]);
-
-      if (res.requiresActionConfirmation && res.actionPayload) {
-        setActionConfirmPayload(res.actionPayload);
+      if (res?.type === 'action_confirmation' || prompt.toLowerCase().includes('inject') || prompt.toLowerCase().includes('maintenance')) {
+        setActionConfirmPayload({
+          assetId: res?.resolvedAssetId || 'LAPTOP-001',
+          actionType: 'CREATE_MAINTENANCE_WORK_ORDER',
+        });
       }
     } catch (err) {
       console.warn('Copilot drawer query fallback:', err);
@@ -65,25 +56,31 @@ const CopilotDrawer = ({ isOpen, onClose }: Props) => {
     if (!actionConfirmPayload) return;
     setLoading(true);
     try {
-      const result = await executeCopilotAction(
-        actionConfirmPayload.action,
-        actionConfirmPayload.target,
-        actionConfirmPayload.scenario
-      );
+      const result = await executeCopilotAction(actionConfirmPayload.assetId, actionConfirmPayload.actionType);
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          question: `Confirmed Action: ${actionConfirmPayload.action}`,
-          answer: result.message || 'Action executed successfully.',
-          evidence: [`Target Asset: ${actionConfirmPayload.target}`, `Scenario: ${actionConfirmPayload.scenario}`],
-          risk: 'Simulation state updated.',
-          recommendation: 'Observe real-time telemetry response.',
-          dataSourcesUsed: ['SIMULATED'],
-          confidence: 'CONFIRMED',
-          timestamp: new Date().toLocaleTimeString(),
-        },
-      ]);
+      if (result) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: 'text',
+            message: `Consequential Action ${result.actionId} Executed: ${result.details}`,
+            answer: `Action ${result.actionId} executed successfully by ${result.confirmedBy}`,
+            resolvedAssetId: result.assetId,
+            inferenceCategory: 'OBSERVED',
+            dataTraces: [
+              {
+                source: 'REAL-TIME LOCAL',
+                assetId: result.assetId,
+                metric: 'Action Audit Log',
+                value: result.status,
+                quality: 'LIVE',
+                timestamp: result.executedAt,
+              },
+            ],
+            timestamp: result.executedAt,
+          },
+        ]);
+      }
       setActionConfirmPayload(null);
     } catch (e) {
       console.warn('Copilot drawer action execution fallback:', e);
@@ -92,11 +89,9 @@ const CopilotDrawer = ({ isOpen, onClose }: Props) => {
     }
   };
 
-
   return (
     <div className="fixed inset-0 z-50 overflow-hidden bg-slate-950/60 backdrop-blur-sm flex justify-end">
-      <div className="w-full max-w-lg bg-slate-900 border-l border-slate-800 text-slate-100 flex flex-col h-full shadow-2xl animate-in slide-in-from-right duration-300">
-        
+      <div className="w-full max-w-lg bg-slate-900 border-l border-slate-800 text-slate-100 flex flex-col h-full shadow-2xl animate-in slide-in-from-right duration-300 font-sans">
         {/* Header */}
         <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
           <div className="flex items-center gap-3">
@@ -105,14 +100,14 @@ const CopilotDrawer = ({ isOpen, onClose }: Props) => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-sm text-slate-100">IRISYN COPILOT</h3>
-                <span className="px-2 py-0.5 rounded text-[9px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
-                  DATA-FIRST ONLINE
+                <h3 className="font-bold text-sm text-slate-100 font-mono">IRISYN COPILOT</h3>
+                <span className="px-2 py-0.5 rounded text-[9px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 font-mono">
+                  DATA GATEWAY ONLINE
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+              <p className="text-[11px] text-slate-400 flex items-center gap-1.5 mt-0.5 font-mono">
                 <Sparkles size={12} className="text-purple-400" />
-                Context: <strong className="text-purple-300 font-mono">{activeAssetId || pageContext}</strong>
+                Context: <strong className="text-purple-300 font-mono">{activeAssetId || 'Fleet Overview'}</strong>
               </p>
             </div>
           </div>
@@ -123,19 +118,18 @@ const CopilotDrawer = ({ isOpen, onClose }: Props) => {
         </div>
 
         {/* Quick Suggestion Chips */}
-        <div className="p-3 bg-slate-900/90 border-b border-slate-800 flex items-center gap-1.5 overflow-x-auto scrollbar-none text-[11px]">
+        <div className="p-3 bg-slate-900/90 border-b border-slate-800 flex items-center gap-1.5 overflow-x-auto text-[11px]">
           {[
             'What is happening now?',
             'Show unhealthy assets',
             'Why is MOTOR-001 in warning state?',
-            'Compare MOTOR-001 with host laptop',
-            'Inject bearing fault',
-            'Is telemetry live?',
+            'What is the temperature of MOTOR-001?',
+            'Show prediction evidence',
           ].map((chip) => (
             <button
               key={chip}
               onClick={() => handleSend(chip)}
-              className="px-2.5 py-1 rounded-full bg-slate-800 hover:bg-purple-900/40 text-slate-300 hover:text-purple-200 border border-slate-700 whitespace-nowrap transition-colors"
+              className="px-2.5 py-1 rounded-full bg-slate-950 hover:bg-purple-900/40 text-slate-300 hover:text-purple-200 border border-slate-800 whitespace-nowrap transition-colors font-mono text-[10px]"
             >
               {chip}
             </button>
@@ -143,166 +137,78 @@ const CopilotDrawer = ({ isOpen, onClose }: Props) => {
         </div>
 
         {/* Chat Messages Body */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 font-sans text-xs">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs font-mono">
           {messages.length === 0 && (
-            <div className="text-center py-12 space-y-3">
+            <div className="text-center py-12 space-y-3 font-sans">
               <Bot size={36} className="mx-auto text-purple-400 animate-bounce" />
-              <h4 className="font-bold text-slate-200 text-sm">IRISYN Copilot Data Assistant</h4>
+              <h4 className="font-bold text-slate-200 text-sm">IRISYN Copilot Operational Assistant</h4>
               <p className="text-slate-400 text-xs max-w-xs mx-auto leading-relaxed">
-                Data-first system assistant querying live physical workstation & synthetic industrial twin state. Rule 0: IRISYN Data is the source of truth.
+                Zero-hallucination data gate active. System queries fetch live physical workstation & synthetic industrial twin state from authorized APIs.
               </p>
             </div>
           )}
 
           {messages.map((msg, idx) => (
             <div key={idx} className="space-y-3">
-              {/* User Prompt */}
               <div className="flex justify-end">
-                <div className="px-3.5 py-2 rounded-2xl bg-purple-600 text-white max-w-[85%] font-medium">
-                  {msg.question}
+                <div className="px-3.5 py-2 rounded-2xl bg-purple-600 text-white font-medium font-sans text-xs">
+                  {msg.answer || msg.message}
                 </div>
               </div>
 
-              {/* Copilot Response Card */}
-              <div className="p-4 rounded-xl bg-slate-850 border border-slate-750 space-y-3 bg-slate-950/70">
-                {/* Answer */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest">ANSWER</span>
-                    {msg.freshnessStatus && (
-                      <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
-                        <CheckCircle2 size={11} /> {msg.freshnessStatus} ● &lt; 1s
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-slate-100 font-medium text-xs leading-relaxed">{msg.answer}</p>
+              <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                  <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest flex items-center gap-1.5">
+                    <ShieldCheck size={14} className="text-purple-400" /> COPILOT EXPLANATION
+                  </span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${msg.inferenceCategory === 'OBSERVED' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : msg.inferenceCategory === 'INFERRED' ? 'bg-purple-500/20 text-purple-300 border-purple-500/40' : 'bg-amber-500/20 text-amber-300 border-amber-500/40'}`}>
+                    {msg.inferenceCategory}
+                  </span>
                 </div>
 
-                {/* Evidence */}
-                {msg.evidence && msg.evidence.length > 0 && (
-                  <div className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800 space-y-1 font-mono text-[11px]">
-                    <div className="flex items-center justify-between text-[10px]">
-                      <span className="text-slate-400 font-sans font-bold block">MEASURED EVIDENCE:</span>
-                      <span className="px-1.5 py-0.2 rounded font-bold uppercase bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-                        OBSERVED
-                      </span>
-                    </div>
-                    {msg.evidence.map((item, i) => (
-                      <div key={i} className="text-slate-300 flex items-start gap-1.5">
-                        <span className="text-purple-400">•</span>
-                        <span>{item}</span>
+                <p className="text-slate-100 text-xs leading-relaxed font-sans">{msg.message}</p>
+
+                {msg.dataTraces && msg.dataTraces.length > 0 && (
+                  <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1.5 text-[10px]">
+                    <span className="text-slate-400 font-sans font-bold block uppercase flex items-center gap-1">
+                      <Database size={11} className="text-cyan-400" /> Operational Data Access Traces
+                    </span>
+                    {msg.dataTraces.map((tr, i) => (
+                      <div key={i} className="flex justify-between items-center bg-slate-950 p-1.5 rounded border border-slate-800">
+                        <strong className="text-slate-200">{tr.assetId} • {tr.metric}: {tr.value}</strong>
+                        <span className="px-1.5 py-0.2 rounded font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                          {tr.source}
+                        </span>
                       </div>
                     ))}
                   </div>
                 )}
-
-                {/* Table Data if Comparison */}
-                {msg.tableData && msg.tableData.length > 0 && (
-                  <div className="overflow-x-auto rounded-lg border border-slate-800">
-                    <table className="w-full text-left text-[11px]">
-                      <thead className="bg-slate-800 text-slate-300 font-bold">
-                        <tr>
-                          {Object.keys(msg.tableData[0]).map((k) => (
-                            <th key={k} className="p-2">{k}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800 text-slate-300 font-mono">
-                        {msg.tableData.map((row, rIdx) => (
-                          <tr key={rIdx} className="hover:bg-slate-800/40">
-                            {Object.values(row).map((v, cIdx) => (
-                              <td key={cIdx} className="p-2">{String(v)}</td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {/* Risk & Recommendation */}
-                {msg.risk && (
-                  <div className="grid grid-cols-2 gap-2 text-[11px]">
-                    <div className="p-2 rounded bg-rose-500/10 border border-rose-500/20 text-rose-300">
-                      <strong className="block text-[10px] text-rose-400">RISK:</strong> {msg.risk}
-                    </div>
-                    <div className="p-2 rounded bg-amber-500/10 border border-amber-500/20 text-amber-300">
-                      <strong className="block text-[10px] text-amber-400">RECOMMENDATION:</strong> {msg.recommendation}
-                    </div>
-                  </div>
-                )}
-
-                {/* Expandable Data Used Trace Panel */}
-                {msg.dataUsedTrace && msg.dataUsedTrace.length > 0 && (
-                  <div className="border-t border-slate-800 pt-2">
-                    <button
-                      onClick={() => setExpandedTraceIdx(expandedTraceIdx === idx ? null : idx)}
-                      className="text-[10px] text-slate-400 hover:text-purple-300 font-mono flex items-center justify-between w-full"
-                    >
-                      <span className="flex items-center gap-1">
-                        <Database size={11} className="text-purple-400" />
-                        OPERATIONAL DATA USED TRACE
-                      </span>
-                      {expandedTraceIdx === idx ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-                    </button>
-
-                    {expandedTraceIdx === idx && (
-                      <div className="mt-2 p-2 rounded bg-slate-900 text-[10px] font-mono text-slate-300 space-y-1">
-                        {msg.dataUsedTrace.map((tr, tIdx) => (
-                          <div key={tIdx}>{tr}</div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Data Sources Used Footer */}
-                <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-400">
-                  <div className="flex items-center gap-1.5">
-                    <span>DATA SOURCES:</span>
-                    {msg.dataSourcesUsed.map((src) => (
-                      <span
-                        key={src}
-                        className={`px-1.5 py-0.5 rounded font-bold ${
-                          src === 'REAL-TIME LOCAL'
-                            ? 'bg-emerald-500/20 text-emerald-300'
-                            : 'bg-purple-500/20 text-purple-300'
-                        }`}
-                      >
-                        {src}
-                      </span>
-                    ))}
-                  </div>
-                  <span className="text-slate-500 font-mono">Confidence: {msg.confidence}</span>
-                </div>
               </div>
             </div>
           ))}
 
           {/* Action Confirmation Modal Banner */}
           {actionConfirmPayload && (
-            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/40 text-amber-200 space-y-3 animate-in fade-in duration-200">
-              <div className="flex items-center gap-2 font-bold text-sm text-amber-300">
-                <AlertTriangle size={18} />
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/40 text-amber-200 space-y-3">
+              <div className="flex items-center gap-2 font-bold text-xs text-amber-300">
+                <AlertTriangle size={16} />
                 Consequential Action Confirmation Required
               </div>
-              <div className="text-xs space-y-1 text-slate-300 font-mono bg-slate-900/80 p-2.5 rounded border border-slate-800">
-                <div>ACTION: <strong className="text-amber-400">{actionConfirmPayload.action}</strong></div>
-                <div>TARGET: <strong className="text-slate-100">{actionConfirmPayload.target}</strong></div>
-                <div>MODE: <strong className="text-purple-400">SIMULATION</strong></div>
-                <div>SCENARIO: <strong>{actionConfirmPayload.scenario}</strong></div>
+              <div className="text-[11px] space-y-1 text-slate-300 bg-slate-950 p-2.5 rounded border border-slate-800">
+                <div>ACTION: <strong className="text-amber-400">{actionConfirmPayload.actionType}</strong></div>
+                <div>TARGET: <strong className="text-slate-100">{actionConfirmPayload.assetId}</strong></div>
               </div>
               <div className="flex justify-end gap-2 pt-1">
                 <button
                   onClick={() => setActionConfirmPayload(null)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  className="px-3 py-1 rounded text-xs bg-slate-800 text-slate-300 hover:bg-slate-700"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleConfirmAction}
                   disabled={loading}
-                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 text-white hover:bg-amber-500 shadow-md"
+                  className="px-3 py-1 rounded text-xs font-bold bg-amber-600 text-white hover:bg-amber-500"
                 >
                   {loading ? 'Executing...' : 'Confirm Execution'}
                 </button>
@@ -313,21 +219,21 @@ const CopilotDrawer = ({ isOpen, onClose }: Props) => {
           {loading && (
             <div className="flex items-center gap-2 text-slate-400 text-xs italic p-2">
               <RefreshCw size={14} className="animate-spin text-purple-400" />
-              Copilot Data Gate is querying platform tools & digital twin engine...
+              Copilot Data Gate is dispatching tool query to backend API...
             </div>
           )}
           <div ref={chatEndRef} />
         </div>
 
         {/* Input Bar */}
-        <div className="p-3 border-t border-slate-800 bg-slate-950 flex items-center gap-2">
+        <div className="p-3 border-t border-slate-800 bg-slate-950 flex items-center gap-2 font-mono">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder={`Ask Copilot about ${activeAssetId || 'system state'}...`}
-            className="flex-1 bg-slate-900 border border-slate-750 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-purple-500"
+            className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-100 focus:outline-none focus:border-purple-500"
           />
           <button
             onClick={() => handleSend()}

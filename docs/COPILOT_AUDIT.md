@@ -1,108 +1,117 @@
-# COPILOT_AUDIT.md — IRISYN Copilot Data Flow & Architecture Audit
+# IRISYN Master Copilot Audit & Architecture Report (COPILOT_AUDIT.md)
 
-This audit evaluates the IRISYN Copilot AI implementation as mandated by the **DATA-FIRST REBUILD DIRECTIVE**.
+## 1. Executive Summary & Audit Overview
+This audit inspects the current IRISYN Copilot implementation against the **Master Data-First Copilot Rebuild Specification**. 
 
----
+The fundamental architectural principle of IRISYN Copilot is:
+> **The LLM is NOT the source of truth.** IRISYN backend APIs, Digital Twin state engine, telemetry DB storage, and deterministic calculation engines are the sole authoritative source of truth. The LLM explains validated IRISYN results.
 
-## 1. Executive Summary & Root Cause Analysis
-
-### Core Problem:
-The earlier chatbot architecture mixed static text formatting, heuristic keyword matching, and partial API queries. In several cases, when an asset or metric identifier was slightly ambiguous or when time ranges were requested, response generators could output static fallback text or fail to perform deterministic time-series aggregation.
-
-### Fundamental Principle:
-$$\text{THE LLM IS NOT THE SOURCE OF TRUTH. IRISYN DATA IS THE SOURCE OF TRUTH.}$$
-
-The LLM must **NEVER** guess or invent a system value, timestamp, health score, temperature, vibration, or alert count.
-
----
-
-## 2. Current Architecture & Data Flow Breakdown
-
-```mermaid
-graph TD
-    subgraph UI Layer
-        CopilotConsole[Copilot Console /copilot]
-        CopilotDrawer[Floating Copilot Drawer]
-    end
-
-    subgraph Legacy / Partial Data Path
-        CopilotResource[CopilotResource /api/copilot/query]
-        CopilotEngine[CopilotEngine.java]
-        ToolRouter[CopilotToolRouter.java]
-    end
-
-    subgraph Data Sources
-        DTEngine[DigitalTwinEngine: Asset States]
-        LocalCollector[LocalTelemetryCollector: Host hardware]
-        Sim[IndustrialSimulator: Motor & Pump]
-        DB[(PostgreSQL / H2: ServerEntity, Metrics, Alerts)]
-    end
-
-    CopilotConsole --> CopilotResource
-    CopilotDrawer --> CopilotResource
-    CopilotResource --> CopilotEngine
-    CopilotEngine --> ToolRouter
-    ToolRouter --> DTEngine
-    ToolRouter --> LocalCollector
-    ToolRouter --> Sim
-    ToolRouter --> DB
+```
+USER
+  ↓
+IRISYN COPILOT UI (CopilotConsole.tsx / CopilotDrawer.tsx)
+  ↓
+POST /api/copilot/chat
+  ↓
+COPILOT SERVICE & QUERY ROUTER
+  ├─ Intent Resolution (CURRENT_DATA, HEALTH, ANOMALY, PREDICTION, MAINTENANCE, etc.)
+  ├─ Entity Resolution ("Motor 1" → MOTOR-001)
+  ├─ Metric Resolution ("CPU usage" → cpu, "temperature" → temperature)
+  └─ Time Resolution ("last 6 hours" → startTime/endTime)
+  ↓
+DATA GATE & AUTHORIZATION
+  ↓
+TOOL ROUTER (CopilotToolRegistry.java)
+  ├─ Telemetry Service / Database History
+  ├─ Digital Twin Engine / Health Factors
+  ├─ Anomaly Detection Engine ($|Z| \ge 2.5\sigma$)
+  ├─ Prediction Risk Engine
+  └─ Alerts / Incidents / Maintenance / Simulation Status
+  ↓
+DETERMINISTIC CALCULATION ENGINE (average, min, max, zScore, trend, rateOfChange)
+  ↓
+RESULT VALIDATOR (Source, Freshness, Data Quality SLA)
+  ↓
+CONTEXT BUILDER
+  ↓
+LLM PROVIDER ABSTRACTION (AIProvider -> ProviderA / ProviderB)
+  ↓
+RESPONSE GENERATOR & CHAT-TO-UI ACTIONS
+  ├─ Text / Table / Chart Renderers
+  └─ Consequential Write Action Confirmation Modal
 ```
 
 ---
 
-## 3. Detailed Audit of Available APIs & Data Sources
+## 2. Comprehensive Component Audit Matrix
 
-| Domain | Available Backend Component | Data Elements Accessible | Current Limitations |
+### 2.1 Current Copilot Flow & Wiring Audit
+
+| Component Layer | Current Implementation Status | Identified Deficiencies & Root Cause | Required Remediation |
 |---|---|---|---|
-| **Real Local Telemetry** | `LocalTelemetryCollector.java` | Real Host CPU (%), RAM (%), Disk (%), Temp (°C), Uptime (sec), Threads | Real-time sample available, but no deterministic time-range aggregator (SUM/AVG/MAX over 6h). |
-| **Industrial Telemetry** | `IndustrialSimulator.java` | `MOTOR-001` & `PUMP-001` physics (RPM, Torque, Current, Voltage, Temp, Vibration) | Live parameters generated; lacks historical Z-Score calculation engine for LLM. |
-| **Digital Twin Health** | `DigitalTwinEngine.java` | 0-100% composite health, transparent factor breakdown | Lacks entity/alias resolver (`"the motor"` $\rightarrow$ `MOTOR-001`). |
-| **Data Quality & Transport** | `DataQualityEngine.java` / `SystemTelemetryResource` | Latency (ms), Freshness (ms), Data completeness (%) | Freshness status not automatically injected into every query response. |
-| **Alerts & Incidents** | `AlertRepository.java` / `AlertResource.java` | `AlertEntity` severity, message, source, acknowledged status | Needs automatic incident timeline builder. |
-| **Data Center Servers** | `ServerRepository.java` / `MetricRepository.java` | `dc-node-01..06` CPU, RAM, Temp, Disk | ServerStatus enum conversion bug fixed, but query routing needed alias mapping. |
+| **API Endpoint Path** | `POST /api/copilot/query` | Mismatch with spec path `POST /api/copilot/chat` | Add `POST /api/copilot/chat` endpoint and request DTO envelope |
+| **LLM Integration Layer** | Local deterministic rule engine | Lacks external LLM provider abstraction (`AIProvider` interface) | Implement pluggable `AIProvider` interface with `OpenAIProvider` / `LocalProvider` fallback |
+| **Query Intent Classification** | Simple keyword search (`contains("unhealthy")`) | 18 canonical query categories (e.g. `HISTORICAL_DATA`, `COMPARISON`, `INCIDENT`) are partially categorized | Upgrade Query Router into a 18-category classifier with intent DTO |
+| **Entity & Alias Resolver** | Partial keyword match (`motor` $\rightarrow$ `MOTOR-001`) | No clarification mechanism when asset identity is ambiguous | Implement strict `EntityResolver` querying Panache `AssetEntity` database |
+| **Time Range Resolver** | Static defaults | Natural language time expressions ("last 6 hours", "since morning") not converted to exact ISO timestamps | Implement `TimeRangeResolver` computing `startTime` / `endTime` ISO ranges |
+| **Tool Calling Suite** | Basic 6 tools in `CopilotToolRegistry.java` | Lacks historical time-series aggregation tools, incident timelines, and database health checks | Expand tool suite to 30+ tools specified in Section 9 |
+| **Data Quality & Freshness SLA** | 4-tier freshness indicator | Freshness threshold validation not explicitly gating stale telemetry in all tool queries | Enforce strict `DataFreshnessGate` returning `DATA_STALE` when metric age > threshold |
+| **Consequential Action Gate** | Modal banner in UI | Permission checks not enforced server-side before rendering confirmation DTO | Enforce server-side RBAC permission check before returning action confirmation DTO |
+| **Audit Logging** | Local execution logs | Lacks structured operational audit trail for Copilot requests | Implement `CopilotAuditLogger` recording request ID, user ID, tool calls, and execution outcome |
 
 ---
 
-## 4. Identified Failures & Root Causes
+## 3. Existing API & Data Source Inventory
 
-1. **Lack of Query Classification & Data Gate**:
-   - General knowledge queries ("What is a Digital Twin?") were handled identically to live system data queries ("What is my CPU usage?").
-   - **Fix**: Create `CopilotDataGate.java` to intercept and enforce MANDATORY tool data retrieval for system/data questions.
+### 3.1 Backend Endpoints Available vs Required
 
-2. **No Entity Resolver (`CopilotEntityResolver.java`)**:
-   - Queries like `"the motor"`, `"motor 1"`, `"node 3"`, `"server 3"`, `"my laptop"` failed to resolve to authoritative asset IDs (`MOTOR-001`, `dc-node-03`, `LAPTOP-001`).
-
-3. **No Metric & Time Resolver (`CopilotMetricResolver.java` & `CopilotTimeResolver.java`)**:
-   - Terms like `"thermal"`, `"amps"`, `"processor usage"`, `"last 6 hours"` were not deterministically parsed into standard metric keys and exact timestamps.
-
-4. **Missing Deterministic Calculation Engine (`CopilotCalculationEngine.java`)**:
-   - Mathematical functions (`SUM`, `AVERAGE`, `MIN`, `MAX`, `PERCENTAGE_CHANGE`, `RATE_OF_CHANGE`, `TREND`, `Z_SCORE`) were left to the LLM instead of being computed deterministically by Java code.
-
-5. **Absence of Operational Data-Access Trace ("Data Used")**:
-   - The user had no visual confirmation of exact asset IDs resolved, sample counts, freshness, and tool execution traces.
+| REST API Endpoint | Current Backend Status | Exposed Data |
+|---|---|---|
+| `GET /api/assets` | **AVAILABLE** | List all connected physical & synthetic assets |
+| `GET /api/assets/{id}` | **AVAILABLE** | Single asset entity details, health score, operating mode |
+| `GET /api/assets/{id}/health` | **AVAILABLE** | Health model factors, weights, contributor breakdown |
+| `GET /api/assets/{id}/anomalies` | **AVAILABLE** | Statistical Z-score anomalies ($|Z| \ge 2.5\sigma$) |
+| `GET /api/assets/{id}/predictions` | **AVAILABLE** | Failure probability risk vectors & horizons |
+| `GET /api/assets/{id}/trends` | **AVAILABLE** | Trajectory directions (`RISING`, `FALLING`, `STABLE`) |
+| `GET /api/intelligence/overview` | **AVAILABLE** | Fleet-wide risk and health rankings |
+| `POST /api/copilot/chat` | **NEEDS REBUILD** | Natural language chat endpoint returning structured response payload |
 
 ---
 
-## 5. Rebuild Roadmap (21-Step Order as Mandated)
+## 4. Root Cause Analysis of Data Inaccuracy
+1. **Direct Model Memory vs Data Tool Execution**:
+   - In standard LLM setups, models attempt to synthesize system answers from prompt text. In IRISYN, system data changes at high frequency (0.8s SLA).
+2. **Missing Entity & Canonical Metric Resolution**:
+   - Natural language queries like *"vibration on server 3"* must be deterministically mapped to `dc-node-03` and metric `disk` before any DB query.
+3. **Lack of Pluggable AI Provider Abstraction**:
+   - Currently, domain logic is tied to hardcoded strings rather than an enterprise `AIProvider` interface with backend credentials (`LLM_API_KEY`, `LLM_MODEL`).
 
-1. [x] Audit current Copilot architecture (`COPILOT_AUDIT.md`).
-2. [ ] Build `CopilotDataGate.java` (Mandatory Data-First Interceptor).
-3. [ ] Build `CopilotQueryRouter.java` (20 Intent Categories).
-4. [ ] Build `CopilotEntityResolver.java` (Asset Alias Mapping & Clarification).
-5. [ ] Build `CopilotMetricResolver.java` (Metric Alias Mapping).
-6. [ ] Build `CopilotTimeResolver.java` (Natural Language Time to Timestamps).
-7. [ ] Expand `CopilotToolRouter.java` (30+ Data Retrieval Methods).
-8. [ ] Build `CopilotCalculationEngine.java` (SUM, AVG, MIN, MAX, TREND, Z-SCORE).
-9. [ ] Build `CopilotResultValidator.java` (Freshness & Quality Verification).
-10. [ ] Build Health & Factor Explainer (`Why did health drop?`).
-11. [ ] Build "What Happened?" & Incident Timeline Engine.
-12. [ ] Build Alert Explainer Engine.
-13. [ ] Build System Status & Data Quality Engine.
-14. [ ] Implement Data Source & Freshness Attribution (`REAL-TIME LOCAL` vs `SIMULATED`).
-15. [ ] Implement Operational Data-Access Trace (`"Data Used"` drawer).
-16. [ ] Implement Natural Language Analytics & Comparison Tables.
-17. [ ] Connect UI Dashboard Navigation & Filter Actions.
-18. [ ] Enforce Consequential Write-Action Confirmation Modal.
-19. [ ] Implement Golden Test Suite & Automated Tests.
-20. [ ] Refine Copilot Console & Floating Drawer UI.
-21. [ ] Final Golden Test Verification.
+---
+
+## 5. Security & Deployment Audit
+- **Secrets Isolation**: Environment variables (`LLM_API_KEY`, `LLM_MODEL`, `LLM_PROVIDER`) must strictly reside on the backend. Frontend must never access or leak provider credentials.
+- **Role-Based Access Control (RBAC)**: All tool invocations must validate caller role (`ADMIN`, `ENGINEER`, `OPERATOR`, `VIEWER`). Read-only users (`VIEWER`) are blocked from action execution.
+- **Audit Logging**: Write actions (`CREATE_MAINTENANCE_WORK_ORDER`, `INJECT_FAULT`) write immutable entries to `AuditLogEntity`.
+
+---
+
+## 6. Recommended Rebuild Plan
+
+### Step 1: Pluggable AI Provider Abstraction (`AIProvider.java`)
+- Create backend `AIProvider` interface and implementation classes (`OpenAIProvider`, `IRISYNLocalProvider`).
+- Create `.env.example` with backend-only environment variable names.
+
+### Step 2: IRISYN Copilot Rebuild Endpoint (`POST /api/copilot/chat`)
+- Implement `POST /api/copilot/chat` accepting `{ "message": "...", "context": { ... } }` and returning structured responses (`type`: `"text" | "table" | "chart" | "action_confirmation"`).
+
+### Step 3: Expanded Tool Registry & Resolvers
+- Upgrade `EntityResolver`, `MetricResolver`, and `TimeRangeResolver`.
+- Expand `CopilotToolRegistry.java` to support 30+ tools (assets, telemetry, twin history, health factors, alerts, predictions, maintenance, system status).
+
+### Step 4: Deterministic Calculation Engine & Result Validation
+- Implement `CopilotCalculationEngine.java` (average, min, max, stdDev, rateOfChange, trend, zScore).
+- Enforce strict `ResultValidator` and `DataFreshnessGate`.
+
+### Step 5: Frontend UI Rebuild & Action Confirmation Modal
+- Update `copilot.service.ts` and `CopilotConsole.tsx` to communicate exclusively with `POST /api/copilot/chat`.
+- Implement Section 9 Action Confirmation Modal and Section 8 "Why This Answer?" Evidence Audit Panel.
