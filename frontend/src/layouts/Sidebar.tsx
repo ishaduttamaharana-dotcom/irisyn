@@ -82,6 +82,7 @@ const NAV_GROUPS = [
     title: 'ADMINISTRATION',
     items: [
       { to: '/security', label: 'Security & RBAC', icon: ShieldCheck },
+      { to: '/deployment', label: 'Deployment & Reliability', icon: Server },
       { to: '/cluster', label: 'Cluster Info', icon: Workflow },
       { to: '/settings', label: 'System Settings', icon: SettingsIcon },
       { to: '/architecture', label: 'Target Architecture', icon: Layers },

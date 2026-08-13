@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { getWebSocketUrl } from '@/services/socket.service';
 import { getLiveTelemetry } from '@/services/telemetry.service';
@@ -8,33 +8,43 @@ export const useWebSocketMetrics = () => {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
   const pollIntervalRef = useRef<number | null>(null);
+  const backoffRef = useRef<number>(1000); // Initial backoff 1s
+
+  const [connectionState, setConnectionState] = useState<'CONNECTED' | 'RECONNECTING' | 'OFFLINE'>('OFFLINE');
 
   useEffect(() => {
-    // 1. Establish high-frequency fallback poll to guarantee continuous live laptop telemetry
+    const resyncState = async () => {
+      try {
+        const telemetryData = await getLiveTelemetry();
+        if (telemetryData) {
+          queryClient.setQueryData(['liveTelemetry'], telemetryData);
+          queryClient.invalidateQueries({ queryKey: ['assets'] });
+          queryClient.invalidateQueries({ queryKey: ['systemInfo'] });
+        }
+      } catch (e) {
+        // ignore transient errors
+      }
+    };
+
     const startPollingFallback = () => {
       if (pollIntervalRef.current) return;
-      pollIntervalRef.current = window.setInterval(async () => {
-        try {
-          const telemetryData = await getLiveTelemetry();
-          if (telemetryData) {
-            queryClient.setQueryData(['liveTelemetry'], telemetryData);
-            queryClient.invalidateQueries({ queryKey: ['assets'] });
-            queryClient.invalidateQueries({ queryKey: ['systemInfo'] });
-          }
-        } catch (e) {
-          // ignore transient network poll errors
-        }
+      pollIntervalRef.current = window.setInterval(() => {
+        resyncState();
       }, 1500);
     };
 
     const connect = () => {
       const url = getWebSocketUrl();
       try {
+        setConnectionState('RECONNECTING');
         const ws = new WebSocket(url);
         wsRef.current = ws;
 
         ws.onopen = () => {
-          console.log('[WebSocket] Connection established for real-time telemetry stream');
+          console.log('[WebSocket] Connection established — resynchronizing state...');
+          setConnectionState('CONNECTED');
+          backoffRef.current = 1000; // Reset backoff delay on successful connection
+          resyncState();
         };
 
         ws.onmessage = (event) => {
@@ -55,16 +65,24 @@ export const useWebSocketMetrics = () => {
         };
 
         ws.onerror = () => {
+          setConnectionState('RECONNECTING');
           startPollingFallback();
         };
 
         ws.onclose = () => {
+          setConnectionState('RECONNECTING');
           startPollingFallback();
+          
+          // Exponential backoff reconnect: min 1s, max 30s
+          const delay = Math.min(backoffRef.current, 30000);
+          backoffRef.current = backoffRef.current * 1.5;
+
           reconnectTimeoutRef.current = window.setTimeout(() => {
             connect();
-          }, 3000);
+          }, delay);
         };
       } catch (e) {
+        setConnectionState('OFFLINE');
         startPollingFallback();
       }
     };
@@ -85,4 +103,6 @@ export const useWebSocketMetrics = () => {
       }
     };
   }, [queryClient]);
+
+  return { connectionState };
 };

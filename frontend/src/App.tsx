@@ -25,6 +25,7 @@ import IntegrationsView from './pages/Integrations/IntegrationsView';
 import LogsView from './pages/Logs/LogsView';
 import ReportsView from './pages/Reports/ReportsView';
 import AccessCenter from './pages/Access/AccessCenter';
+import DeploymentView from './pages/Deployment/DeploymentView';
 
 const App = () => {
   return (
@@ -47,6 +48,7 @@ const App = () => {
               <Route path="/predictions" element={<PredictionsView />} />
               <Route path="/simulation" element={<SimulationView />} />
               <Route path="/security" element={<Security />} />
+              <Route path="/deployment" element={<DeploymentView />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/diagnostics" element={<DiagnosticsView />} />
               <Route path="/integrations" element={<IntegrationsView />} />

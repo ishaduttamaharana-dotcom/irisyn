@@ -1,0 +1,49 @@
+name: IRISYN Production CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Frontend Type Check & Production Build
+        run: |
+          cd frontend
+          npx tsc --noEmit
+          npm run build
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Backend Unit Tests & Package
+        run: |
+          cd backend
+          mvn test -B
+
+      - name: Build Docker Production Images
+        run: |
+          docker build -t irisyn-frontend:latest -f Dockerfile.frontend .
+          docker build -t irisyn-backend:latest -f Dockerfile.backend .
