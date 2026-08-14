@@ -26,6 +26,8 @@ import LogsView from './pages/Logs/LogsView';
 import ReportsView from './pages/Reports/ReportsView';
 import AccessCenter from './pages/Access/AccessCenter';
 import DeploymentView from './pages/Deployment/DeploymentView';
+import IndustrialView from './pages/Industrial/IndustrialView';
+import StitchDesignView from './pages/StitchDesign/StitchDesignView';
 
 const App = () => {
   return (
@@ -36,6 +38,7 @@ const App = () => {
           <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/stitch-design" element={<StitchDesignView />} />
               <Route path="/access-center" element={<AccessCenter />} />
               <Route path="/copilot" element={<CopilotConsole />} />
               <Route path="/assets" element={<AssetList />} />
@@ -49,6 +52,7 @@ const App = () => {
               <Route path="/simulation" element={<SimulationView />} />
               <Route path="/security" element={<Security />} />
               <Route path="/deployment" element={<DeploymentView />} />
+              <Route path="/industrial" element={<IndustrialView />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/diagnostics" element={<DiagnosticsView />} />
               <Route path="/integrations" element={<IntegrationsView />} />

@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IRISYN Operations & Intelligence Platform</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-tint": "#cabeff",
+            "primary": "#cabeff",
+            "secondary": "#6dd2ff",
+            "tertiary": "#ffb780",
+            "error": "#ffb4ab",
+            "outline": "#938ea1",
+            "background": "#070A0F",
+            "surface": "#14121b",
+            "surface-container-low": "#1c1a24",
+            "surface-container": "#201e28",
+            "surface-container-high": "#2b2933",
+            "surface-container-highest": "#36333e",
+            "surface-variant": "#36333e",
+            "on-surface": "#e6e0ee",
+            "on-surface-variant": "#c9c4d8",
+            "primary-container": "#947dff",
+            "on-primary-container": "#2a0088",
+            "secondary-container": "#00b6eb",
+            "error-container": "#93000a",
+            "outline-variant": "#484555",
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #070A0F; color: #e6e0ee; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+    .glass-panel { background: rgba(20, 18, 27, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glass-panel-subtle { background: rgba(28, 26, 36, 0.6); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.05); }
+    .glow-cyan { box-shadow: 0 0 20px rgba(109, 210, 255, 0.25); }
+    .glow-purple { box-shadow: 0 0 20px rgba(124, 92, 255, 0.3); }
+    .glow-red { box-shadow: 0 0 20px rgba(255, 180, 171, 0.35); }
+    
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 13, 22, 0.5); }
+    ::-webkit-scrollbar-thumb { background: #36333e; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #484555; }
+    
+    .timeline-line {
+      position: absolute;
+      left: 15px;
+      top: 24px;
+      bottom: 24px;
+      width: 2px;
+      background: linear-gradient(to bottom, #ffb4ab 0%, #ffb780 50%, #36333e 100%);
+    }
+    
+    .pulse-glow { animation: pulseGlow 2s infinite; }
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 0 0 rgba(255, 180, 171, 0.6); }
+      70% { box-shadow: 0 0 0 10px rgba(255, 180, 171, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(255, 180, 171, 0); }
+    }
+    
+    .tab-pane { display: none; opacity: 0; transform: translateY(4px); transition: opacity 0.25s ease, transform 0.25s ease; }
+    .tab-pane.active { display: flex; opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col bg-background text-on-surface select-none">
+
+  <!-- TOP HEADER NAVBAR -->
+  <header class="fixed top-0 right-0 left-20 z-40 h-14 bg-surface-container/90 backdrop-blur-md border-b border-outline-variant px-6 flex justify-between items-center transition-all duration-300">
+    <div class="flex items-center gap-3">
+      <nav class="flex items-center gap-2 text-xs font-medium text-on-surface-variant">
+        <span class="material-symbols-outlined text-sm text-outline">home</span>
+        <span class="material-symbols-outlined text-xs text-outline">chevron_right</span>
+        <span class="text-on-surface">IRISYN</span>
+        <span class="material-symbols-outlined text-xs text-outline">chevron_right</span>
+        <span id="header-active-view-name" class="text-primary font-bold border-b border-primary pb-0.5">Operations Center</span>
+      </nav>
+    </div>
+    
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2 bg-surface-variant px-3 py-1 rounded-full border border-outline-variant/50">
+        <span class="w-2 h-2 rounded-full bg-secondary animate-ping"></span>
+        <span class="font-mono text-[10px] text-secondary font-bold uppercase tracking-widest">LIVE STREAM</span>
+      </div>
+
+      <!-- Quick Search Bar -->
+      <div class="relative hidden md:block">
+        <span class="material-symbols-outlined absolute left-2.5 top-1.5 text-xs text-outline">search</span>
+        <input type="text" placeholder="Search assets, telemetry..." class="bg-surface border border-outline-variant/60 rounded-lg text-xs pl-8 pr-3 py-1 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary w-48 transition-all"/>
+      </div>
+
+      <!-- Copilot Trigger Button -->
+      <button onclick="toggleCopilotDrawer()" class="flex items-center gap-1.5 bg-primary-container/20 text-primary border border-primary/40 px-3 py-1 rounded-lg text-xs font-semibold hover:bg-primary-container/30 transition-all glow-purple">
+        <span class="material-symbols-outlined text-sm">smart_toy</span>
+        <span>Copilot AI</span>
+      </button>
+
+      <div class="flex items-center gap-2 border-l border-outline-variant pl-4">
+        <!-- Notifications Bell -->
+        <button onclick="toggleNotificationsMenu()" class="relative text-on-surface-variant hover:text-on-surface p-1.5 rounded-lg hover:bg-surface-variant transition-colors">
+          <span class="material-symbols-outlined text-xl">notifications</span>
+          <span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
+        </button>
+
+        <!-- Profile Menu -->
+        <div class="flex items-center gap-2 cursor-pointer hover:bg-surface-variant p-1 rounded-lg transition-colors">
+          <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-primary-container to-secondary-container flex items-center justify-center font-bold text-xs text-on-primary-container">
+            OP
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- SIDEBAR NAVIGATION (Hover expandable) -->
+  <aside class="fixed left-0 top-0 h-full z-50 flex flex-col bg-surface border-r border-outline-variant w-20 hover:w-64 transition-all duration-300 ease-in-out group overflow-hidden shadow-2xl">
+    <!-- Brand Logo Header -->
+    <div class="h-14 flex items-center px-4 border-b border-outline-variant shrink-0">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-container via-purple-600 to-secondary-container flex items-center justify-center text-white font-extrabold text-lg shadow-lg shrink-0">
+        I
+      </div>
+      <div class="ml-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+        <span class="font-extrabold text-base text-primary tracking-tight block leading-none">IRISYN</span>
+        <span class="text-[9px] uppercase tracking-widest text-on-surface-variant font-semibold">SEE • PREDICT • ACT</span>
+      </div>
+    </div>
+
+    <!-- Navigation Menu Items -->
+    <div class="flex-1 overflow-y-auto py-3 px-2 flex flex-col gap-1">
+      <button onclick="switchTab('tab-operations', 'Operations Center', this)" class="nav-item active flex items-center h-10 px-3.5 rounded-lg text-primary bg-primary-container/20 border-l-2 border-primary w-full transition-all group/item">
+        <span class="material-symbols-outlined shrink-0 text-xl" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+        <span class="ml-4 opacity-0 group-hover:opacity-100 whitespace-nowrap text-xs font-semibold transition-opacity duration-200">Operations Center</span>
+      </button>
+
+      <button onclick="switchTab('tab-engineering', 'Engineering Investigation', this)" class="nav-item flex items-center h-10 px-3.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant w-full transition-all group/item">
+        <span class="material-symbols-outlined shrink-0 text-xl">engineering</span>
+        <span class="ml-4 opacity-0 group-hover:opacity-100 whitespace-nowrap text-xs font-medium transition-opacity duration-200">Engineering Workspace</span>
+      </button>
+
+      <button onclick="switchTab('tab-intelligence', 'Intelligence Center', this)" class="nav-item flex items-center h-10 px-3.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant w-full transition-all group/item">
+        <span class="material-symbols-outlined shrink-0 text-xl">psychology</span>
+        <span class="ml-4 opacity-0 group-hover:opacity-100 whitespace-nowrap text-xs font-medium transition-opacity duration-200">Intelligence Center</span>
+      </button>
+
+      <button onclick="switchTab('tab-simulation', 'Simulation Lab', this)" class="nav-item flex items-center h-10 px-3.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant w-full transition-all group/item">
+        <span class="material-symbols-outlined shrink-0 text-xl">science</span>
+        <span class="ml-4 opacity-0 group-hover:opacity-100 whitespace-nowrap text-xs font-medium transition-opacity duration-200">Simulation Lab</span>
+      </button>
+
+      <button onclick="switchTab('tab-integrations', 'Data & Integrations Hub', this)" class="nav-item flex items-center h-10 px-3.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant w-full transition-all group/item">
+        <span class="material-symbols-outlined shrink-0 text-xl">hub</span>
+        <span class="ml-4 opacity-0 group-hover:opacity-100 whitespace-nowrap text-xs font-medium transition-opacity duration-200">Data & Integrations</span>
+      </button>
+
+      <button onclick="switchTab('tab-security', 'Security & Access', this)" class="nav-item flex items-center h-10 px-3.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant w-full transition-all group/item">
+        <span class="material-symbols-outlined shrink-0 text-xl">security</span>
+        <span class="ml-4 opacity-0 group-hover:opacity-100 whitespace-nowrap text-xs font-medium transition-opacity duration-200">Security Center</span>
+      </button>
+
+      <button onclick="switchTab('tab-asset', 'Asset Workspace: MOTOR-001', this)" class="nav-item flex items-center h-10 px-3.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant w-full transition-all group/item">
+        <span class="material-symbols-outlined shrink-0 text-xl">inventory_2</span>
+        <span class="ml-4 opacity-0 group-hover:opacity-100 whitespace-nowrap text-xs font-medium transition-opacity duration-200">Asset Workspace</span>
+      </button>
+
+      <button onclick="switchTab('tab-health', 'System Health & Architecture', this)" class="nav-item flex items-center h-10 px-3.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant w-full transition-all group/item">
+        <span class="material-symbols-outlined shrink-0 text-xl">speed</span>
+        <span class="ml-4 opacity-0 group-hover:opacity-100 whitespace-nowrap text-xs font-medium transition-opacity duration-200">System Health</span>
+      </button>
+
+      <button onclick="switchTab('tab-deployment', 'Deployment & Reliability', this)" class="nav-item flex items-center h-10 px-3.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant w-full transition-all group/item">
+        <span class="material-symbols-outlined shrink-0 text-xl">rocket_launch</span>
+        <span class="ml-4 opacity-0 group-hover:opacity-100 whitespace-nowrap text-xs font-medium transition-opacity duration-200">Reliability & Deploy</span>
+      </button>
+
+      <button onclick="switchTab('tab-edge', 'Edge AI & OpenShift Console', this)" class="nav-item flex items-center h-10 px-3.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant w-full transition-all group/item">
+        <span class="material-symbols-outlined shrink-0 text-xl">memory</span>
+        <span class="ml-4 opacity-0 group-hover:opacity-100 whitespace-nowrap text-xs font-medium transition-opacity duration-200">Edge & OpenShift AI</span>
+      </button>
+
+      <button onclick="switchTab('tab-executive', 'Executive Reporting', this)" class="nav-item flex items-center h-10 px-3.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant w-full transition-all group/item">
+        <span class="material-symbols-outlined shrink-0 text-xl">analytics</span>
+        <span class="ml-4 opacity-0 group-hover:opacity-100 whitespace-nowrap text-xs font-medium transition-opacity duration-200">Executive Reports</span>
+      </button>
+
+      <button onclick="switchTab('tab-shader', 'Shader Studio', this)" class="nav-item flex items-center h-10 px-3.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-variant w-full transition-all group/item">
+        <span class="material-symbols-outlined shrink-0 text-xl">palette</span>
+        <span class="ml-4 opacity-0 group-hover:opacity-100 whitespace-nowrap text-xs font-medium transition-opacity duration-200">Shader Visualizer</span>
+      </button>
+    </div>
+
+    <!-- Sidebar Footer -->
+    <div class="p-3 border-t border-outline-variant bg-surface-container/50 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="opacity-0 group-hover:opacity-100 text-[11px] font-mono text-on-surface-variant whitespace-nowrap">Node #01 Active</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="ml-20 mt-14 mb-8 p-6 flex-1 flex flex-col gap-6 relative min-h-[calc(100vh-5.5rem)]">
+
+    <!-- TAB 1: OPERATIONS CENTER (DEFAULT) -->
+    <div id="tab-operations" class="tab-pane active flex-col gap-6 w-full">
+      <!-- Title & Live Alert -->
+      <div class="flex flex-col gap-1">
+        <h1 class="text-2xl font-extrabold tracking-tight text-on-surface">IRISYN OPERATIONS CENTER</h1>
+        <p class="text-xs text-on-surface-variant">Real-time operational intelligence across your Digital Twin environment.</p>
+      </div>
+
+      <!-- Critical Alert Box -->
+      <div class="glass-panel rounded-xl p-4 border border-error/50 bg-error-container/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg glow-red">
+        <div class="flex items-center gap-3.5">
+          <div class="w-10 h-10 rounded-lg bg-error/20 flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-error text-2xl" style="font-variation-settings: 'FILL' 1;">warning</span>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-error">1 Critical Anomaly Requires Immediate Action</h3>
+            <p class="text-xs text-on-surface-variant mt-0.5">MOTOR-001 reporting severe harmonic vibration (2.8 mm/s) & rapid thermal spike (74.2°C).</p>
+          </div>
+        </div>
+        <button onclick="switchTab('tab-engineering', 'Engineering Investigation', null)" class="bg-error text-on-error px-5 py-2 rounded-lg text-xs font-bold hover:bg-error/90 transition-all uppercase tracking-wider shadow-md shrink-0">
+          Investigate Anomaly
+        </button>
+      </div>
+
+      <!-- 3-Column Layout -->
+      <div class="grid grid-cols-12 gap-6 min-h-[580px]">
+        
+        <!-- Left Column: KPIs & Attention List -->
+        <div class="col-span-12 lg:col-span-3 flex flex-col gap-5">
+          <!-- 4 KPI Cards Grid -->
+          <div class="grid grid-cols-2 gap-3">
+            <div class="glass-panel p-3.5 rounded-xl flex flex-col gap-1 border-l-4 border-l-primary">
+              <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-outline">Fleet Health</span>
+              <span class="font-mono text-xl font-extrabold text-primary">78%</span>
+            </div>
+            <div class="glass-panel p-3.5 rounded-xl flex flex-col gap-1 border-l-4 border-l-secondary">
+              <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-outline">Active Assets</span>
+              <span class="font-mono text-xl font-extrabold text-on-surface">6</span>
+            </div>
+            <div class="glass-panel p-3.5 rounded-xl flex flex-col gap-1 border-l-4 border-l-error">
+              <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-outline">Critical</span>
+              <span class="font-mono text-xl font-extrabold text-error">1</span>
+            </div>
+            <div class="glass-panel p-3.5 rounded-xl flex flex-col gap-1 border-l-4 border-l-tertiary">
+              <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-outline">Alerts</span>
+              <span class="font-mono text-xl font-extrabold text-tertiary">3</span>
+            </div>
+          </div>
+
+          <!-- What Needs Attention List -->
+          <div class="glass-panel rounded-xl flex flex-col flex-1 overflow-hidden">
+            <div class="p-3.5 border-b border-outline-variant bg-surface-variant/40 flex justify-between items-center">
+              <h3 class="text-xs font-bold text-on-surface uppercase tracking-wider">What Needs Attention?</h3>
+              <span class="text-[10px] font-mono text-outline">2 Assets Flagged</span>
+            </div>
+            <div class="p-3 flex flex-col gap-2.5 overflow-y-auto flex-1">
+              <!-- Item 1 -->
+              <div onclick="switchTab('tab-engineering', 'Engineering Investigation', null)" class="p-3 rounded-lg bg-surface border border-error/40 hover:border-error transition-all cursor-pointer group relative overflow-hidden">
+                <div class="absolute left-0 top-0 bottom-0 w-1 bg-error"></div>
+                <div class="flex justify-between items-start pl-2">
+                  <span class="font-mono font-bold text-xs text-on-surface">MOTOR-001</span>
+                  <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-error/20 text-error uppercase">High Risk</span>
+                </div>
+                <p class="text-xs text-on-surface-variant pl-2 mt-1">High vibration & thermal trend</p>
+                <div class="flex justify-between items-center pl-2 mt-2">
+                  <span class="font-mono text-[11px] text-outline">Health: 78%</span>
+                  <span class="material-symbols-outlined text-xs text-outline group-hover:text-error group-hover:translate-x-1 transition-all">arrow_forward</span>
+                </div>
+              </div>
+
+              <!-- Item 2 -->
+              <div onclick="switchTab('tab-asset', 'Asset Workspace', null)" class="p-3 rounded-lg bg-surface border border-tertiary/40 hover:border-tertiary transition-all cursor-pointer group relative overflow-hidden">
+                <div class="absolute left-0 top-0 bottom-0 w-1 bg-tertiary"></div>
+                <div class="flex justify-between items-start pl-2">
+                  <span class="font-mono font-bold text-xs text-on-surface">PUMP-001</span>
+                  <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-tertiary/20 text-tertiary uppercase">Medium Risk</span>
+                </div>
+                <p class="text-xs text-on-surface-variant pl-2 mt-1">Flow rate baseline deviation</p>
+                <div class="flex justify-between items-center pl-2 mt-2">
+                  <span class="font-mono text-[11px] text-outline">Health: 82%</span>
+                  <span class="material-symbols-outlined text-xs text-outline group-hover:text-tertiary group-hover:translate-x-1 transition-all">arrow_forward</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Center Column: WebGL Shader Canvas & Spatial Twin View -->
+        <div class="col-span-12 lg:col-span-6 glass-panel rounded-xl relative overflow-hidden flex flex-col border border-outline-variant min-h-[420px]">
+          <!-- Canvas Top Overlay -->
+          <div class="p-3 border-b border-outline-variant/60 bg-surface/70 flex justify-between items-center z-10 backdrop-blur-md">
+            <span class="text-xs font-bold text-on-surface uppercase tracking-wider flex items-center gap-2">
+              <span class="material-symbols-outlined text-base text-primary">hub</span> Spatial Twin View
+            </span>
+            <div class="flex gap-1.5">
+              <button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-variant transition-colors"><span class="material-symbols-outlined text-sm">zoom_in</span></button>
+              <button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-variant transition-colors"><span class="material-symbols-outlined text-sm">zoom_out</span></button>
+              <button class="p-1 rounded text-outline hover:text-on-surface hover:bg-surface-variant transition-colors"><span class="material-symbols-outlined text-sm">center_focus_strong</span></button>
+            </div>
+          </div>
+
+          <!-- WebGL Canvas Shader Background -->
+          <div class="absolute inset-0 z-0">
+            <canvas id="ops-shader-canvas" class="w-full h-full block opacity-75"></canvas>
+            <div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-80"></div>
+          </div>
+
+          <!-- Spatial Markers Overlay -->
+          <div class="absolute inset-0 z-10 pointer-events-none p-6">
+            <!-- Pin 1: MOTOR-001 (Critical Pin) -->
+            <div class="absolute top-[38%] left-[28%] pointer-events-auto group cursor-pointer" onclick="switchTab('tab-engineering', 'Engineering Investigation', null)">
+              <div class="w-5 h-5 rounded-full bg-error animate-ping absolute opacity-75"></div>
+              <div class="w-5 h-5 rounded-full bg-error relative border-2 border-background flex items-center justify-center text-[10px] font-bold text-on-error">!</div>
+              <!-- Hover Card -->
+              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 glass-panel rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-error shadow-2xl">
+                <div class="font-mono text-xs font-bold text-error border-b border-outline-variant/30 pb-1 mb-1.5 flex justify-between">
+                  <span>MOTOR-001</span>
+                  <span class="text-[9px] text-error font-extrabold uppercase">CRITICAL</span>
+                </div>
+                <div class="flex justify-between text-[11px] font-mono"><span class="text-outline">Temp:</span><span class="text-error font-bold">74.2°C</span></div>
+                <div class="flex justify-between text-[11px] font-mono"><span class="text-outline">Vibe:</span><span class="text-tertiary">2.8 mm/s</span></div>
+              </div>
+            </div>
+
+            <!-- Pin 2: PUMP-001 -->
+            <div class="absolute top-[58%] left-[62%] pointer-events-auto group cursor-pointer" onclick="switchTab('tab-asset', 'Asset Workspace', null)">
+              <div class="w-4 h-4 rounded-full bg-tertiary relative border-2 border-background"></div>
+              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-44 glass-panel rounded-lg p-3 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-tertiary shadow-xl">
+                <div class="font-mono text-xs font-bold text-tertiary border-b border-outline-variant/30 pb-1 mb-1">PUMP-001</div>
+                <div class="flex justify-between text-[11px] font-mono"><span class="text-outline">Health:</span><span class="text-on-surface">82%</span></div>
+              </div>
+            </div>
+
+            <!-- Pin 3: NODE-03 (Nominal) -->
+            <div class="absolute top-[25%] left-[72%] pointer-events-auto group cursor-pointer">
+              <div class="w-3.5 h-3.5 rounded-full bg-secondary relative border-2 border-background"></div>
+            </div>
+          </div>
+
+          <!-- Bottom Legend Bar -->
+          <div class="absolute bottom-3 left-3 right-3 z-10 glass-panel-subtle rounded-lg px-3 py-2 flex items-center justify-between text-[11px] font-mono text-outline">
+            <span>Spatial Nodes: 12 Active</span>
+            <div class="flex items-center gap-3">
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-error"></span> Critical</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-tertiary"></span> Alert</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-secondary"></span> Nominal</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Asset Telemetry & Intelligence -->
+        <div class="col-span-12 lg:col-span-3 flex flex-col gap-5">
+          <!-- Selected Asset Panel -->
+          <div class="glass-panel rounded-xl flex flex-col border border-error/50">
+            <div class="p-3.5 border-b border-outline-variant bg-error-container/20 flex justify-between items-center">
+              <div>
+                <h3 class="font-mono font-bold text-xs text-on-surface">MOTOR-001</h3>
+                <span class="text-[9px] font-mono font-bold text-error uppercase tracking-wider">Critical Warning</span>
+              </div>
+              <span class="material-symbols-outlined text-error text-xl" style="font-variation-settings: 'FILL' 1;">warning</span>
+            </div>
+            <div class="p-3.5 flex flex-col gap-3">
+              <div class="grid grid-cols-2 gap-3">
+                <div class="bg-surface/60 p-2 rounded border border-outline-variant/30">
+                  <span class="block text-[10px] font-mono text-outline">Temp</span>
+                  <span class="block font-mono text-sm font-bold text-error">74.2°C</span>
+                </div>
+                <div class="bg-surface/60 p-2 rounded border border-outline-variant/30">
+                  <span class="block text-[10px] font-mono text-outline">RPM</span>
+                  <span class="block font-mono text-sm font-bold text-on-surface">2840</span>
+                </div>
+                <div class="bg-surface/60 p-2 rounded border border-outline-variant/30">
+                  <span class="block text-[10px] font-mono text-outline">Vibration</span>
+                  <span class="block font-mono text-sm font-bold text-tertiary">2.8 mm/s</span>
+                </div>
+                <div class="bg-surface/60 p-2 rounded border border-outline-variant/30">
+                  <span class="block text-[10px] font-mono text-outline">Mode</span>
+                  <span class="block font-mono text-[11px] font-bold text-secondary">SIMULATED</span>
+                </div>
+              </div>
+              <button onclick="switchTab('tab-engineering', 'Engineering Investigation', null)" class="w-full border border-outline-variant hover:bg-surface-variant text-on-surface py-1.5 rounded-lg font-mono text-xs font-semibold transition-colors mt-1">
+                VIEW TELEMETRY
+              </button>
+            </div>
+          </div>
+
+          <!-- Intelligence Prediction Area -->
+          <div class="glass-panel rounded-xl flex flex-col flex-1 border border-outline-variant overflow-hidden">
+            <div class="p-3.5 border-b border-outline-variant bg-surface-variant/40">
+              <h3 class="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">psychology</span> IRISYN INTELLIGENCE
+              </h3>
+            </div>
+            <div class="p-3.5 flex flex-col gap-3 overflow-y-auto flex-1">
+              <div class="border-l-2 border-tertiary pl-3 py-1">
+                <span class="block text-[10px] font-mono font-bold text-tertiary uppercase mb-0.5">PREDICTION</span>
+                <p class="text-xs text-on-surface">Thermal degradation detected. 72% probability of bearing failure within 4 hours if RPM is maintained.</p>
+              </div>
+              <div class="border-l-2 border-outline-variant pl-3 py-1">
+                <span class="block text-[10px] font-mono font-bold text-outline uppercase mb-0.5">ANOMALY DETECTED</span>
+                <p class="text-xs text-on-surface-variant">Vibration harmonics (3.2 kHz) deviate from baseline cluster signature.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 2: ENGINEERING INVESTIGATION WORKSPACE -->
+    <div id="tab-engineering" class="tab-pane flex-col gap-6 w-full">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 class="text-2xl font-extrabold tracking-tight text-on-surface">Engineering Investigation: MOTOR-001</h1>
+          <p class="text-xs text-on-surface-variant">Root cause analysis, harmonic vibration spectrum & corrective actions.</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="showToast('Work Order #WO-9941 created in SAP S/4HANA successfully!')" class="bg-primary-container text-on-primary-container font-semibold px-4 py-2 rounded-lg text-xs hover:bg-primary transition-all shadow-md">
+            + Generate Work Order
+          </button>
+        </div>
+      </div>
+
+      <!-- Investigation Content Grid -->
+      <div class="grid grid-cols-12 gap-6">
+        <!-- Root Cause Timeline -->
+        <div class="col-span-12 lg:col-span-4 glass-panel rounded-xl p-5 border border-outline-variant flex flex-col gap-4">
+          <h3 class="text-xs font-bold text-on-surface uppercase tracking-wider border-b border-outline-variant pb-2">Anomaly Timeline</h3>
+          
+          <div class="relative pl-6 flex flex-col gap-5 my-2">
+            <div class="timeline-line"></div>
+            
+            <div class="relative flex flex-col gap-1">
+              <div class="w-3 h-3 rounded-full bg-error absolute -left-[20px] top-1 border-2 border-background pulse-glow"></div>
+              <span class="font-mono text-[10px] text-error font-bold">08:14 AM - Thermal Spike</span>
+              <p class="text-xs text-on-surface">Motor casing temperature escalated from 42°C to 74.2°C in 12 minutes.</p>
+            </div>
+
+            <div class="relative flex flex-col gap-1">
+              <div class="w-3 h-3 rounded-full bg-tertiary absolute -left-[20px] top-1 border-2 border-background"></div>
+              <span class="font-mono text-[10px] text-tertiary font-bold">08:30 AM - Harmonic Deviation</span>
+              <p class="text-xs text-on-surface">FFT sensor recorded 3.2 kHz peak (2.8 mm/s amplitude shift).</p>
+            </div>
+
+            <div class="relative flex flex-col gap-1">
+              <div class="w-3 h-3 rounded-full bg-primary absolute -left-[20px] top-1 border-2 border-background"></div>
+              <span class="font-mono text-[10px] text-primary font-bold">08:45 AM - AI Model Flag</span>
+              <p class="text-xs text-on-surface">IRISYN Deep Predictive Engine calculated 72% failure risk within 4 hours.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- FFT Vibration Spectrum Canvas & Chart -->
+        <div class="col-span-12 lg:col-span-8 glass-panel rounded-xl p-5 border border-outline-variant flex flex-col gap-4">
+          <div class="flex justify-between items-center border-b border-outline-variant pb-2">
+            <h3 class="text-xs font-bold text-on-surface uppercase tracking-wider">FFT Vibration Harmonics Spectrum</h3>
+            <span class="font-mono text-[11px] text-secondary">Sensor ID: VIB-AXIS-01</span>
+          </div>
+          
+          <div class="h-64 w-full bg-surface-container/60 rounded-lg p-3 relative border border-outline-variant/40 flex items-center justify-center">
+            <canvas id="vibration-canvas" class="w-full h-full block"></canvas>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3 font-mono text-xs">
+            <div class="bg-surface/50 p-2.5 rounded border border-outline-variant/30">
+              <span class="text-outline block text-[10px]">Peak Harmonic</span>
+              <span class="text-error font-bold">3.2 kHz @ 2.8 mm/s</span>
+            </div>
+            <div class="bg-surface/50 p-2.5 rounded border border-outline-variant/30">
+              <span class="text-outline block text-[10px]">Baseline Limit</span>
+              <span class="text-on-surface font-bold">1.1 mm/s</span>
+            </div>
+            <div class="bg-surface/50 p-2.5 rounded border border-outline-variant/30">
+              <span class="text-outline block text-[10px]">Diagnosis</span>
+              <span class="text-tertiary font-bold">Bearing Outer Race Fatigue</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sensor Delta Comparison Table -->
+        <div class="col-span-12 glass-panel rounded-xl p-5 border border-outline-variant">
+          <h3 class="text-xs font-bold text-on-surface uppercase tracking-wider mb-4">Sensor Reading vs Nominal Baseline</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left font-mono text-xs">
+              <thead class="bg-surface-variant/50 text-outline border-b border-outline-variant">
+                <tr>
+                  <th class="p-3">PARAMETER</th>
+                  <th class="p-3">MEASURED VALUE</th>
+                  <th class="p-3">NOMINAL BASELINE</th>
+                  <th class="p-3">DELTA</th>
+                  <th class="p-3">STATUS</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-outline-variant/30">
+                <tr>
+                  <td class="p-3 font-bold text-on-surface">Casing Temp</td>
+                  <td class="p-3 text-error font-bold">74.2 °C</td>
+                  <td class="p-3 text-outline">45.0 °C</td>
+                  <td class="p-3 text-error">+29.2 °C</td>
+                  <td class="p-3"><span class="px-2 py-0.5 rounded bg-error/20 text-error text-[10px] font-bold">ANOMALOUS</span></td>
+                </tr>
+                <tr>
+                  <td class="p-3 font-bold text-on-surface">Axis Vibration</td>
+                  <td class="p-3 text-tertiary font-bold">2.8 mm/s</td>
+                  <td class="p-3 text-outline">1.1 mm/s</td>
+                  <td class="p-3 text-tertiary">+1.7 mm/s</td>
+                  <td class="p-3"><span class="px-2 py-0.5 rounded bg-tertiary/20 text-tertiary text-[10px] font-bold">WARNING</span></td>
+                </tr>
+                <tr>
+                  <td class="p-3 font-bold text-on-surface">Rotational Speed</td>
+                  <td class="p-3 text-on-surface">2,840 RPM</td>
+                  <td class="p-3 text-outline">2,850 RPM</td>
+                  <td class="p-3 text-outline">-10 RPM</td>
+                  <td class="p-3"><span class="px-2 py-0.5 rounded bg-secondary/20 text-secondary text-[10px] font-bold">NOMINAL</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: INTELLIGENCE CENTER -->
+    <div id="tab-intelligence" class="tab-pane flex-col gap-6 w-full">
+      <div class="flex flex-col gap-1">
+        <h1 class="text-2xl font-extrabold tracking-tight text-on-surface">IRISYN Intelligence Center</h1>
+        <p class="text-xs text-on-surface-variant">Predictive AI models, confidence metrics & telemetry neural forecasts.</p>
+      </div>
+
+      <div class="grid grid-cols-12 gap-6">
+        <div class="col-span-12 lg:col-span-6 glass-panel rounded-xl p-5 border border-outline-variant flex flex-col gap-4">
+          <h3 class="text-xs font-bold text-primary uppercase tracking-wider">AI Model Health & Confidence</h3>
+          <div class="flex items-center gap-6">
+            <div class="w-32 h-32 rounded-full border-8 border-primary-container border-t-primary flex items-center justify-center font-mono font-bold text-2xl text-primary glow-purple">
+              94.2%
+            </div>
+            <div class="flex flex-col gap-2 font-mono text-xs">
+              <div><span class="text-outline">Active Model:</span> <span class="text-on-surface font-bold">IRISYN-Predict-v3.4</span></div>
+              <div><span class="text-outline">Inference Latency:</span> <span class="text-secondary font-bold">1.4 ms</span></div>
+              <div><span class="text-outline">Training Data:</span> <span class="text-on-surface">14.2M Telemetry Points</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-span-12 lg:col-span-6 glass-panel rounded-xl p-5 border border-outline-variant flex flex-col gap-4">
+          <h3 class="text-xs font-bold text-secondary uppercase tracking-wider">Fine-Tuning Console</h3>
+          <p class="text-xs text-on-surface-variant">Re-train model weights on recent anomaly cluster logs.</p>
+          <button onclick="showToast('AI Model Retraining job queued on OpenShift AI cluster!')" class="bg-secondary-container text-on-surface font-semibold px-4 py-2.5 rounded-lg text-xs hover:bg-secondary transition-all w-fit glow-cyan">
+            Initiate Model Fine-Tuning
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: SIMULATION LAB -->
+    <div id="tab-simulation" class="tab-pane flex-col gap-6 w-full">
+      <div class="flex flex-col gap-1">
+        <h1 class="text-2xl font-extrabold tracking-tight text-on-surface">Simulation Lab: What-If Scenarios</h1>
+        <p class="text-xs text-on-surface-variant">Test operating parameters against Digital Twin physics engine.</p>
+      </div>
+
+      <div class="grid grid-cols-12 gap-6">
+        <div class="col-span-12 lg:col-span-5 glass-panel rounded-xl p-5 border border-outline-variant flex flex-col gap-5">
+          <h3 class="text-xs font-bold text-on-surface uppercase tracking-wider border-b border-outline-variant pb-2">Simulation Controls</h3>
+          
+          <div class="flex flex-col gap-2">
+            <div class="flex justify-between font-mono text-xs">
+              <span class="text-outline">Motor RPM:</span>
+              <span id="sim-rpm-val" class="text-primary font-bold">2840 RPM</span>
+            </div>
+            <input type="range" min="1000" max="4000" value="2840" id="sim-rpm" oninput="updateSim()" class="accent-primary w-full cursor-pointer"/>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <div class="flex justify-between font-mono text-xs">
+              <span class="text-outline">Cooling Water Flow:</span>
+              <span id="sim-flow-val" class="text-secondary font-bold">12 L/min</span>
+            </div>
+            <input type="range" min="0" max="50" value="12" id="sim-flow" oninput="updateSim()" class="accent-secondary w-full cursor-pointer"/>
+          </div>
+
+          <button onclick="showToast('Simulation complete! Thermal equilibrium projected at 61.5°C with 15% RPM reduction.')" class="bg-primary-container text-on-primary-container font-semibold px-4 py-2.5 rounded-lg text-xs hover:bg-primary transition-all">
+            Run Physics Simulation
+          </button>
+        </div>
+
+        <div class="col-span-12 lg:col-span-7 glass-panel rounded-xl p-5 border border-outline-variant flex flex-col gap-4">
+          <h3 class="text-xs font-bold text-on-surface uppercase tracking-wider">Projected Thermal Curve</h3>
+          <div class="h-56 bg-surface-container/60 rounded-lg p-3 border border-outline-variant/40 flex items-center justify-center">
+            <canvas id="sim-canvas" class="w-full h-full block"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: DATA & INTEGRATIONS -->
+    <div id="tab-integrations" class="tab-pane flex-col gap-6 w-full">
+      <div class="flex flex-col gap-1">
+        <h1 class="text-2xl font-extrabold tracking-tight text-on-surface">Data & Integrations Hub</h1>
+        <p class="text-xs text-on-surface-variant">Real-time Kafka pipelines, MQTT brokers & ERP connectors.</p>
+      </div>
+
+      <div class="grid grid-cols-12 gap-4">
+        <div class="col-span-12 sm:col-span-6 md:col-span-3 glass-panel p-4 rounded-xl flex flex-col gap-2 border border-outline-variant">
+          <div class="flex justify-between items-center">
+            <span class="font-mono text-xs font-bold text-on-surface">Apache Kafka</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+          </div>
+          <span class="font-mono text-xl font-extrabold text-secondary">42.5k msg/s</span>
+          <span class="text-[10px] text-outline">Streaming Telemetry</span>
+        </div>
+
+        <div class="col-span-12 sm:col-span-6 md:col-span-3 glass-panel p-4 rounded-xl flex flex-col gap-2 border border-outline-variant">
+          <div class="flex justify-between items-center">
+            <span class="font-mono text-xs font-bold text-on-surface">MQTT Broker</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+          </div>
+          <span class="font-mono text-xl font-extrabold text-primary">12 Gateways</span>
+          <span class="text-[10px] text-outline">Edge Nodes</span>
+        </div>
+
+        <div class="col-span-12 sm:col-span-6 md:col-span-3 glass-panel p-4 rounded-xl flex flex-col gap-2 border border-outline-variant">
+          <div class="flex justify-between items-center">
+            <span class="font-mono text-xs font-bold text-on-surface">SAP S/4HANA</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+          </div>
+          <span class="font-mono text-xl font-extrabold text-tertiary">Connected</span>
+          <span class="text-[10px] text-outline">ERP Maintenance</span>
+        </div>
+
+        <div class="col-span-12 sm:col-span-6 md:col-span-3 glass-panel p-4 rounded-xl flex flex-col gap-2 border border-outline-variant">
+          <div class="flex justify-between items-center">
+            <span class="font-mono text-xs font-bold text-on-surface">OPC-UA Server</span>
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+          </div>
+          <span class="font-mono text-xl font-extrabold text-on-surface">Active</span>
+          <span class="text-[10px] text-outline">SCADA Industrial</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: SECURITY CENTER -->
+    <div id="tab-security" class="tab-pane flex-col gap-6 w-full">
+      <h1 class="text-2xl font-extrabold tracking-tight text-on-surface">Security & Zero-Trust Governance</h1>
+      <div class="glass-panel rounded-xl p-5 border border-outline-variant">
+        <h3 class="text-xs font-bold text-on-surface uppercase tracking-wider mb-4">Zero-Trust Audit Log</h3>
+        <table class="w-full text-left font-mono text-xs">
+          <thead class="bg-surface-variant/50 text-outline border-b border-outline-variant">
+            <tr><th class="p-3">TIMESTAMP</th><th class="p-3">IDENTITY</th><th class="p-3">ACTION</th><th class="p-3">IP ADDRESS</th></tr>
+          </thead>
+          <tbody class="divide-y divide-outline-variant/30">
+            <tr><td class="p-3 text-outline">12:44:10</td><td class="p-3 text-primary font-bold">admin@irisyn.io</td><td class="p-3">Work Order Dispatch</td><td class="p-3 text-outline">10.244.0.12</td></tr>
+            <tr><td class="p-3 text-outline">12:40:02</td><td class="p-3 text-secondary font-bold">edge-node-01</td><td class="p-3">Telemetry Sync</td><td class="p-3 text-outline">192.168.1.50</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 7: ASSET WORKSPACE -->
+    <div id="tab-asset" class="tab-pane flex-col gap-6 w-full">
+      <h1 class="text-2xl font-extrabold tracking-tight text-on-surface">Asset Workspace: MOTOR-001</h1>
+      <div class="grid grid-cols-12 gap-6">
+        <div class="col-span-12 lg:col-span-6 glass-panel rounded-xl p-5 border border-outline-variant">
+          <h3 class="text-xs font-bold text-on-surface uppercase tracking-wider mb-3">Specifications</h3>
+          <div class="space-y-2 font-mono text-xs">
+            <div class="flex justify-between"><span class="text-outline">Model:</span><span class="text-on-surface">Siemens 1LE1503 Industrial</span></div>
+            <div class="flex justify-between"><span class="text-outline">Power Rating:</span><span class="text-on-surface">45 kW</span></div>
+            <div class="flex justify-between"><span class="text-outline">Serial Number:</span><span class="text-on-surface">SN-89421-A</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 8: SYSTEM HEALTH -->
+    <div id="tab-health" class="tab-pane flex-col gap-6 w-full">
+      <h1 class="text-2xl font-extrabold tracking-tight text-on-surface">System Health & Architecture</h1>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="glass-panel p-4 rounded-xl border border-outline-variant flex flex-col gap-1">
+          <span class="text-xs text-outline font-mono">CPU Load</span>
+          <span class="text-xl font-bold font-mono text-primary">42%</span>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-outline-variant flex flex-col gap-1">
+          <span class="text-xs text-outline font-mono">RAM Memory</span>
+          <span class="text-xl font-bold font-mono text-secondary">68%</span>
+        </div>
+        <div class="glass-panel p-4 rounded-xl border border-outline-variant flex flex-col gap-1">
+          <span class="text-xs text-outline font-mono">Cluster Latency</span>
+          <span class="text-xl font-bold font-mono text-tertiary">3.2 ms</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 9: DEPLOYMENT & RELIABILITY -->
+    <div id="tab-deployment" class="tab-pane flex-col gap-6 w-full">
+      <h1 class="text-2xl font-extrabold tracking-tight text-on-surface">Deployment & Reliability Control</h1>
+      <div class="glass-panel p-5 rounded-xl border border-outline-variant">
+        <h3 class="text-xs font-bold text-on-surface uppercase tracking-wider mb-2">Canary Release Pipeline</h3>
+        <p class="text-xs text-on-surface-variant">IRISYN Release v2.4.0 deployed to 20% edge nodes.</p>
+      </div>
+    </div>
+
+    <!-- TAB 10: EDGE GATEWAY -->
+    <div id="tab-edge" class="tab-pane flex-col gap-6 w-full">
+      <h1 class="text-2xl font-extrabold tracking-tight text-on-surface">Edge Gateway & OpenShift AI Console</h1>
+      <div class="glass-panel p-5 rounded-xl border border-outline-variant">
+        <h3 class="text-xs font-bold text-on-surface uppercase tracking-wider mb-2">OpenShift AI Cluster</h3>
+        <p class="text-xs text-on-surface-variant">Triton Inference Server active with ONNX execution provider.</p>
+      </div>
+    </div>
+
+    <!-- TAB 11: EXECUTIVE REPORTING -->
+    <div id="tab-executive" class="tab-pane flex-col gap-6 w-full">
+      <h1 class="text-2xl font-extrabold tracking-tight text-on-surface">Executive Reporting & Compliance</h1>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="glass-panel p-5 rounded-xl border border-outline-variant">
+          <span class="text-xs text-outline font-mono">Overall OEE</span>
+          <span class="text-2xl font-bold font-mono text-primary block mt-1">93.7%</span>
+        </div>
+        <div class="glass-panel p-5 rounded-xl border border-outline-variant">
+          <span class="text-xs text-outline font-mono">Availability</span>
+          <span class="text-2xl font-bold font-mono text-secondary block mt-1">98.1%</span>
+        </div>
+        <div class="glass-panel p-5 rounded-xl border border-outline-variant">
+          <span class="text-xs text-outline font-mono">Quality Rate</span>
+          <span class="text-2xl font-bold font-mono text-tertiary block mt-1">99.4%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 12: WEBGL SHADER STUDIO -->
+    <div id="tab-shader" class="tab-pane flex-col gap-6 w-full">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-2xl font-extrabold tracking-tight text-on-surface">Shader Studio</h1>
+          <p class="text-xs text-on-surface-variant">Interactive WebGL particle shader rendering engine.</p>
+        </div>
+      </div>
+      <div class="h-[500px] glass-panel rounded-xl overflow-hidden relative border border-outline-variant">
+        <canvas id="studio-shader-canvas" class="w-full h-full block"></canvas>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- COPILOT SLIDE-OUT DRAWER -->
+  <div id="copilot-drawer" class="fixed right-0 top-14 bottom-8 w-80 sm:w-96 bg-surface-container border-l border-outline-variant z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col shadow-2xl backdrop-blur-xl">
+    <div class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-variant/40">
+      <div class="flex items-center gap-2 text-primary font-bold text-sm">
+        <span class="material-symbols-outlined text-base">smart_toy</span>
+        <span>IRISYN Copilot AI</span>
+      </div>
+      <button onclick="toggleCopilotDrawer()" class="text-outline hover:text-on-surface"><span class="material-symbols-outlined text-sm">close</span></button>
+    </div>
+
+    <div id="copilot-messages" class="flex-1 p-4 overflow-y-auto flex flex-col gap-3 font-mono text-xs">
+      <div class="bg-surface-variant p-3 rounded-lg border border-outline-variant/40 text-on-surface">
+        👋 Hello! I am IRISYN Copilot. I detected a thermal anomaly in MOTOR-001. How can I assist you with the root cause analysis today?
+      </div>
+    </div>
+
+    <div class="p-3 border-t border-outline-variant bg-surface flex gap-2">
+      <input type="text" id="copilot-input" placeholder="Ask Copilot..." onkeydown="if(event.key==='Enter') sendCopilotMsg()" class="flex-1 bg-surface-variant border border-outline-variant rounded-lg text-xs px-3 py-2 text-on-surface placeholder:text-outline focus:outline-none focus:border-primary"/>
+      <button onclick="sendCopilotMsg()" class="bg-primary-container text-on-primary-container p-2 rounded-lg hover:bg-primary transition-all">
+        <span class="material-symbols-outlined text-sm">send</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- FOOTER STATUS BAR -->
+  <footer class="fixed bottom-0 right-0 left-20 h-8 bg-surface-container-low border-t border-outline-variant px-6 flex items-center justify-between text-[11px] font-mono text-on-surface-variant z-40">
+    <div class="flex items-center gap-4">
+      <span class="font-bold text-primary">IRISYN v2.4</span>
+      <span class="text-outline">|</span>
+      <span>System Status: <span class="text-emerald-400 font-bold">NOMINAL</span></span>
+      <span class="text-outline">|</span>
+      <span>Assets Monitored: <span class="text-on-surface">1,240</span></span>
+    </div>
+    <div class="flex items-center gap-4">
+      <span class="text-outline">Telemetry latency: 12ms</span>
+    </div>
+  </footer>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toast-container" class="fixed bottom-12 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- JAVASCRIPT LOGIC & SHADERS -->
+  <script>
+    // Tab Switcher Function
+    function switchTab(tabId, viewTitle, btnElement) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      const target = document.getElementById(tabId);
+      if (target) target.classList.add('active');
+
+      document.getElementById('header-active-view-name').textContent = viewTitle;
+
+      if (btnElement) {
+        document.querySelectorAll('.nav-item').forEach(el => {
+          el.classList.remove('active', 'text-primary', 'bg-primary-container/20', 'border-l-2', 'border-primary');
+          el.classList.add('text-on-surface-variant');
+        });
+        btnElement.classList.add('active', 'text-primary', 'bg-primary-container/20', 'border-l-2', 'border-primary');
+        btnElement.classList.remove('text-on-surface-variant');
+      }
+
+      if (tabId === 'tab-engineering') drawVibrationSpectrum();
+      if (tabId === 'tab-simulation') updateSim();
+    }
+
+    // Copilot Drawer Toggle
+    function toggleCopilotDrawer() {
+      const drawer = document.getElementById('copilot-drawer');
+      drawer.classList.toggle('translate-x-full');
+    }
+
+    // Send Copilot Message
+    function sendCopilotMsg() {
+      const input = document.getElementById('copilot-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const container = document.getElementById('copilot-messages');
+      
+      // User message
+      const userDiv = document.createElement('div');
+      userDiv.className = 'bg-primary-container/20 border border-primary/40 text-primary p-3 rounded-lg self-end max-w-[85%]';
+      userDiv.textContent = text;
+      container.appendChild(userDiv);
+      input.value = '';
+
+      // AI response
+      setTimeout(() => {
+        const aiDiv = document.createElement('div');
+        aiDiv.className = 'bg-surface-variant p-3 rounded-lg border border-outline-variant/40 text-on-surface';
+        aiDiv.textContent = `Analyzing "${text}"... Based on real-time FFT telemetry, throttling MOTOR-001 by 15% will reduce casing temperature to 61°C within 18 minutes.`;
+        container.appendChild(aiDiv);
+        container.scrollTop = container.scrollHeight;
+      }, 600);
+    }
+
+    // Toast Notification System
+    function showToast(message) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'glass-panel border border-primary text-on-surface px-4 py-3 rounded-lg text-xs font-mono shadow-2xl flex items-center gap-2 pointer-events-auto transform translate-y-2 opacity-0 transition-all duration-300 glow-purple';
+      toast.innerHTML = `<span class="material-symbols-outlined text-primary text-base">check_circle</span><span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 10);
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // Vibration Spectrum Canvas Renderer
+    function drawVibrationSpectrum() {
+      const canvas = document.getElementById('vibration-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+
+      const w = canvas.width;
+      const h = canvas.height;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Grid Lines
+      ctx.strokeStyle = 'rgba(72, 69, 85, 0.3)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < w; x += 40) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+      }
+      for (let y = 0; y < h; y += 30) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+
+      // Spectrum curve
+      ctx.strokeStyle = '#ffb4ab';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, h - 30);
+      for (let x = 0; x < w; x += 4) {
+        let y = h - 30 - Math.sin(x * 0.05) * 15 - Math.random() * 8;
+        if (x > w * 0.45 && x < w * 0.55) {
+          y -= 110; // Anomaly peak
+        }
+        ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // Peak Indicator Text
+      ctx.fillStyle = '#ffb4ab';
+      ctx.font = '10px JetBrains Mono';
+      ctx.fillText('PEAK: 3.2 kHz (2.8 mm/s)', w * 0.46, h - 150);
+    }
+
+    // Simulation Lab Update
+    function updateSim() {
+      const rpm = document.getElementById('sim-rpm').value;
+      const flow = document.getElementById('sim-flow').value;
+      document.getElementById('sim-rpm-val').textContent = rpm + ' RPM';
+      document.getElementById('sim-flow-val').textContent = flow + ' L/min';
+
+      const canvas = document.getElementById('sim-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      canvas.width = canvas.clientWidth;
+      canvas.height = canvas.clientHeight;
+      const w = canvas.width;
+      const h = canvas.height;
+
+      ctx.clearRect(0, 0, w, h);
+      ctx.strokeStyle = '#6dd2ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, h - 20);
+
+      const targetTemp = 40 + (rpm / 100) - (flow * 0.8);
+      for (let x = 0; x < w; x += 5) {
+        const y = h - 20 - (x / w) * (targetTemp * 2);
+        ctx.lineTo(x, Math.max(20, y));
+      }
+      ctx.stroke();
+    }
+
+    // WebGL Background Shader for Operations Center
+    (function initOpsShader() {
+      const canvas = document.getElementById('ops-shader-canvas');
+      if (!canvas) return;
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (!gl) return;
+
+      const vs = `attribute vec2 a_position; varying vec2 v_uv; void main() { v_uv = a_position * 0.5 + 0.5; gl_Position = vec4(a_position, 0.0, 1.0); }`;
+      const fs = `precision highp float; uniform float u_time; varying vec2 v_uv;
+        void main() {
+          vec2 st = v_uv * 20.0;
+          float grid = smoothstep(0.02, 0.0, abs(fract(st.x - 0.5) - 0.5)) + smoothstep(0.02, 0.0, abs(fract(st.y - 0.5) - 0.5));
+          vec3 col = mix(vec3(0.03, 0.04, 0.06), vec3(0.48, 0.36, 1.0) * 0.3, grid * 0.4);
+          float pulse = sin(u_time * 2.0 + v_uv.x * 10.0) * 0.5 + 0.5;
+          col += vec3(0.42, 0.82, 1.0) * pulse * 0.08;
+          gl_FragColor = vec4(col, 1.0);
+        }`;
+
+      function cs(type, src) {
+        const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s;
+      }
+      const prog = gl.createProgram();
+      gl.attachShader(prog, cs(gl.VERTEX_SHADER, vs));
+      gl.attachShader(prog, cs(gl.FRAGMENT_SHADER, fs));
+      gl.linkProgram(prog); gl.useProgram(prog);
+
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+      const pos = gl.getAttribLocation(prog, 'a_position');
+      gl.enableVertexAttribArray(pos);
+      gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+
+      const uTime = gl.getUniformLocation(prog, 'u_time');
+      function render(t) {
+        if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
+          canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
+          gl.viewport(0, 0, canvas.width, canvas.height);
+        }
+        gl.uniform1f(uTime, t * 0.001);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        requestAnimationFrame(render);
+      }
+      render(0);
+    })();
+
+    // Initialize Canvas on load
+    window.addEventListener('load', () => {
+      drawVibrationSpectrum();
+      updateSim();
+    });
+    window.addEventListener('resize', () => {
+      drawVibrationSpectrum();
+      updateSim();
+    });
+  </script>
+</body>
+</html>

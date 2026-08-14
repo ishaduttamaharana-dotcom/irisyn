@@ -32,6 +32,7 @@ const NAV_GROUPS = [
     title: 'CORE PLATFORM',
     items: [
       { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
+      { to: '/stitch-design', label: 'Stitch Design Suite', icon: LayoutDashboard },
       { to: '/access-center', label: 'Access Center', icon: Compass },
       { to: '/copilot', label: 'AI Copilot', icon: Bot },
       { to: '/telemetry', label: 'Live Telemetry', icon: Activity },
@@ -74,6 +75,7 @@ const NAV_GROUPS = [
     items: [
       { to: '/data-sources', label: 'Data Sources & Quality', icon: Database },
       { to: '/integrations', label: 'Connectors & APIs', icon: Link2 },
+      { to: '/industrial', label: 'Industrial Edge & AI', icon: Cpu },
       { to: '/logs', label: 'System Logs', icon: ListOrdered },
       { to: '/diagnostics', label: 'Diagnostics', icon: Stethoscope },
     ],
