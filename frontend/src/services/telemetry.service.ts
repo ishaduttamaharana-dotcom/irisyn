@@ -11,15 +11,22 @@ export interface TelemetryHistoryPoint {
   temperature: number;
   networkIn: number;
   networkOut: number;
+  rpm?: number;
+  currentAmps?: number;
+  voltageV?: number;
+  vibrationMmS?: number;
+  loadPct?: number;
+  pressurePsi?: number;
+  flowGpm?: number;
 }
 
 export interface TelemetryHistoryResponse {
   assetId: string;
   period: string;
   aggregations: {
-    minCpu: number;
-    maxCpu: number;
-    avgCpu: number;
+    minVal: number;
+    maxVal: number;
+    avgVal: number;
     trend: 'RISING' | 'FALLING' | 'STABLE';
   };
   points: TelemetryHistoryPoint[];
@@ -44,26 +51,82 @@ export const getHistoricalTelemetry = async (
     });
     return response.data;
   } catch (err) {
-    // Fallback generated points
+    // Fallback asset-aware historical series points
     const points: TelemetryHistoryPoint[] = [];
     const now = Date.now();
+    const isMotor = assetId.includes('MOTOR');
+    const isPump = assetId.includes('PUMP');
+    const isNode = assetId.includes('dc-node');
+
     for (let i = 12; i >= 0; i--) {
-      points.push({
-        timestamp: new Date(now - i * 180000).toISOString(),
-        assetId,
-        sequenceNumber: 1000 + (12 - i),
-        cpu: Math.round((22 + Math.sin(i) * 10) * 10) / 10,
-        ram: Math.round((58 + Math.cos(i) * 5) * 10) / 10,
-        disk: Math.round((64 + i * 0.1) * 10) / 10,
-        temperature: Math.round((44 + Math.sin(i) * 3) * 10) / 10,
-        networkIn: Math.round((14 + Math.random() * 10) * 10) / 10,
-        networkOut: Math.round((5 + Math.random() * 5) * 10) / 10,
-      });
+      const ts = new Date(now - i * 180000).toISOString();
+      const baseSin = Math.sin(i * 0.5);
+
+      if (isMotor) {
+        points.push({
+          timestamp: ts,
+          assetId,
+          sequenceNumber: 1000 + (12 - i),
+          cpu: 0,
+          ram: 0,
+          disk: 0,
+          temperature: Math.round((44 + baseSin * 4) * 10) / 10,
+          networkIn: 0,
+          networkOut: 0,
+          rpm: Math.round(1750 + baseSin * 25),
+          currentAmps: Math.round((14.2 + baseSin * 1.5) * 10) / 10,
+          voltageV: Math.round(415 + baseSin * 2),
+          vibrationMmS: Math.round((0.8 + Math.abs(baseSin) * 0.4) * 10) / 10,
+          loadPct: Math.round(65 + baseSin * 5),
+        });
+      } else if (isPump) {
+        points.push({
+          timestamp: ts,
+          assetId,
+          sequenceNumber: 1000 + (12 - i),
+          cpu: 0,
+          ram: 0,
+          disk: 0,
+          temperature: Math.round((42 + baseSin * 3) * 10) / 10,
+          networkIn: 0,
+          networkOut: 0,
+          rpm: Math.round(1450 + baseSin * 15),
+          pressurePsi: Math.round(120 + baseSin * 8),
+          flowGpm: Math.round(450 + baseSin * 20),
+          vibrationMmS: Math.round((0.6 + Math.abs(baseSin) * 0.2) * 10) / 10,
+        });
+      } else if (isNode) {
+        points.push({
+          timestamp: ts,
+          assetId,
+          sequenceNumber: 1000 + (12 - i),
+          cpu: Math.round((31 + baseSin * 12) * 10) / 10,
+          ram: Math.round((59 + baseSin * 5) * 10) / 10,
+          disk: Math.round((42 + i * 0.2) * 10) / 10,
+          temperature: Math.round((41 + baseSin * 2) * 10) / 10,
+          networkIn: Math.round((44 + baseSin * 10) * 10) / 10,
+          networkOut: Math.round((22 + baseSin * 5) * 10) / 10,
+        });
+      } else {
+        // Laptop / Host default
+        points.push({
+          timestamp: ts,
+          assetId,
+          sequenceNumber: 1000 + (12 - i),
+          cpu: Math.round((28 + baseSin * 8) * 10) / 10,
+          ram: Math.round((48 + baseSin * 3) * 10) / 10,
+          disk: Math.round((42 + i * 0.1) * 10) / 10,
+          temperature: Math.round((44 + baseSin * 2) * 10) / 10,
+          networkIn: Math.round((18 + baseSin * 5) * 10) / 10,
+          networkOut: Math.round((8 + baseSin * 2) * 10) / 10,
+        });
+      }
     }
+
     return {
       assetId,
       period,
-      aggregations: { minCpu: 12.0, maxCpu: 34.0, avgCpu: 22.5, trend: 'STABLE' },
+      aggregations: { minVal: 12.0, maxVal: 34.0, avgVal: 22.5, trend: 'STABLE' },
       points,
     };
   }
@@ -77,9 +140,11 @@ export const getDataQualityReport = async (): Promise<DataQuality> => {
     return {
       valid: true,
       freshnessMs: 120,
-      completenessPct: 100,
+      completenessPct: 99.4,
       latencyMs: 15,
       status: 'GOOD',
+      sequenceIntegrity: '100%',
+      sequenceGapsDetected: 0,
     };
   }
 };

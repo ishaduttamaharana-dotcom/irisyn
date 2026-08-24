@@ -31,7 +31,7 @@ export interface AppConfig {
 
 export const APP_CONFIG: AppConfig = {
   appName: 'IRISYN',
-  tagline: 'SEE • PREDICT • ACT',
+  tagline: 'Digital Twin Platform',
   version: '1.0.0-phase1',
   environment: (import.meta.env.VITE_ENV as 'development' | 'staging' | 'production') || 'development',
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL || '/api',

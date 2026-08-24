@@ -33,7 +33,7 @@ export const DigitalTwinView: React.FC = () => {
   return (
     <DashboardLayout
       title="Digital Twin Core State Inspector"
-      description="SEE • PREDICT • ACT — Structured Physical-to-Digital State Synchronization & Operating Modes"
+      description="Structured Physical-to-Digital State Synchronization & Operating Modes"
     >
       <div className="space-y-6">
         {/* Asset Selection & Twin Registry Bar */}

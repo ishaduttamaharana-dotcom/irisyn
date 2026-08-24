@@ -53,12 +53,12 @@ public class SystemHealthResource {
     @GET
     @Operation(summary = "Unified platform system health aggregator across 14 services")
     public Response getSystemHealth() {
-        List<ServiceRegistryEngine.ServiceInfo> services = serviceRegistry.getAllServices();
+        List<ServiceRegistryEngine.ServiceRecord> services = serviceRegistry.getServiceRegistry();
         long onlineCount = services.stream().filter(s -> "ONLINE".equalsIgnoreCase(s.status)).count();
 
         Map<String, Object> aggregated = Map.of(
             "overallStatus", "HEALTHY",
-            "systemMode", systemModeEngine.getMode().name(),
+            "systemMode", systemModeEngine.getCurrentMode().name(),
             "totalServices", services.size(),
             "onlineServices", onlineCount,
             "dataFreshnessSLA", "LIVE (0.8s sync)",

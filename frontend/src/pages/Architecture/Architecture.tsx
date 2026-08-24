@@ -78,7 +78,7 @@ const Architecture = () => {
               <h4 className="font-bold text-sm text-slate-100">IRISYN Console</h4>
               <span className="text-[11px] text-slate-400 mt-1">React 18 + Recharts UI</span>
               <span className="mt-3 px-2 py-0.5 rounded text-[10px] bg-indigo-500/10 text-indigo-300 font-semibold">
-                SEE • PREDICT • ACT
+                DIGITAL TWIN PLATFORM
               </span>
             </div>
           </div>

@@ -1,7 +1,7 @@
 # IRISYN — Design System & Visual Specification
 
 ## 1. Design Direction & Tone
-IRISYN is an AI-Powered Digital Twin and Predictive Operations Platform ("SEE • PREDICT • ACT").
+IRISYN is an AI-Powered Digital Twin and Predictive Operations Platform.
 
 The visual system communicates:
 $$\text{ENGINEERING} + \text{INTELLIGENCE} + \text{CONTROL} + \text{RELIABILITY}$$

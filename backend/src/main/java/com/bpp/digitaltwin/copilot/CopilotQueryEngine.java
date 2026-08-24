@@ -160,10 +160,14 @@ public class CopilotQueryEngine {
         Map<String, Object> validatedData = Map.of("answer", answerText);
         String explanation = aiProvider.generateResponse(userPrompt, validatedData, queryCategory);
 
+        CopilotMode mode = dataGate.resolveMode(userPrompt, null);
+
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("type", type);
         response.put("message", explanation);
         response.put("answer", answerText);
+        response.put("mode", mode.name());
+        response.put("confidence", "CONFIRMED");
         response.put("queryCategory", queryCategory);
         response.put("resolvedAssetId", resolvedAssetId);
         response.put("canonicalMetric", canonicalMetric);

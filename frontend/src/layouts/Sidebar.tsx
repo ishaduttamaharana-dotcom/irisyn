@@ -8,9 +8,6 @@ import {
   Wrench,
   AlertTriangle,
   Sliders,
-  ShieldCheck,
-  Settings as SettingsIcon,
-  Layers,
   Link2,
   Stethoscope,
   ListOrdered,
@@ -22,7 +19,6 @@ import {
   Boxes,
   Container as ContainerIcon,
   Brain,
-  Workflow,
   Database
 } from 'lucide-react';
 import clsx from 'clsx';
@@ -80,16 +76,6 @@ const NAV_GROUPS = [
       { to: '/diagnostics', label: 'Diagnostics', icon: Stethoscope },
     ],
   },
-  {
-    title: 'ADMINISTRATION',
-    items: [
-      { to: '/security', label: 'Security & RBAC', icon: ShieldCheck },
-      { to: '/deployment', label: 'Deployment & Reliability', icon: Server },
-      { to: '/cluster', label: 'Cluster Info', icon: Workflow },
-      { to: '/settings', label: 'System Settings', icon: SettingsIcon },
-      { to: '/architecture', label: 'Target Architecture', icon: Layers },
-    ],
-  },
 ];
 
 const Sidebar = () => {
@@ -102,7 +88,7 @@ const Sidebar = () => {
             IRISYN
           </span>
           <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mt-1">
-            SEE • PREDICT • ACT
+            DIGITAL TWIN PLATFORM
           </span>
         </div>
       </div>

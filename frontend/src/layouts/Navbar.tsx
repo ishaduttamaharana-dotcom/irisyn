@@ -1,18 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Bell, Moon, Sun, Menu, Bot, Sparkles, Search, Compass } from 'lucide-react';
+import { Bell, Moon, Sun, Menu, Bot, Sparkles, Search } from 'lucide-react';
 import { useTheme } from '@/context/ThemeProvider';
-import { useAuth } from '@/context/AuthContext';
 import CopilotDrawer from '@/components/copilot/CopilotDrawer';
 import UniversalCommandBar from '@/components/common/UniversalCommandBar';
+import UserProfileMenu from '@/components/common/UserProfileMenu';
 
 import SystemHealthHeader from '@/components/common/SystemHealthHeader';
 import { useSystemInfo } from '@/hooks/usePlatformData';
 
 const Navbar = () => {
   const { theme, toggleTheme } = useTheme();
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const { data: systemInfo, isLoading: isSystemLoading, isError: isSystemError } = useSystemInfo();
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const [isCommandBarOpen, setIsCommandBarOpen] = useState(false);
@@ -39,8 +36,6 @@ const Navbar = () => {
           <img src="/irisyn-logo.png" alt="IRISYN Logo" className="h-7 w-7 object-contain md:hidden" />
           <h1 className="text-sm md:text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
             <span className="text-purple-600 dark:text-purple-400 font-extrabold tracking-wide">IRISYN</span>
-            <span className="hidden sm:inline text-slate-400 font-normal">|</span>
-            <span className="hidden sm:inline text-slate-600 dark:text-slate-300 font-medium">SEE • PREDICT • ACT</span>
           </h1>
 
           {/* System Info Header Badge */}
@@ -49,16 +44,16 @@ const Navbar = () => {
 
 
         {/* Center Universal Search Bar Trigger */}
-        <div className="flex-1 max-w-md mx-4 hidden md:block">
+        <div className="flex-1 max-w-md mx-2 lg:mx-4 min-w-[240px] hidden md:block">
           <button
             onClick={() => setIsCommandBarOpen(true)}
-            className="w-full flex items-center justify-between px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 text-xs border border-slate-200 dark:border-slate-750 transition-all"
+            className="w-full h-9 flex items-center justify-between px-3.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-400 text-xs border border-slate-200 dark:border-slate-750 transition-all group"
           >
-            <span className="flex items-center gap-2">
-              <Search size={14} className="text-purple-500" />
-              <span>Search IRISYN resources or enter command...</span>
+            <span className="flex items-center gap-2 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+              <Search size={14} className="text-purple-500 shrink-0 group-hover:scale-110 transition-transform" />
+              <span className="truncate">Search IRISYN resources or enter command...</span>
             </span>
-            <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-900 text-[10px] font-mono text-slate-500 font-bold border border-slate-300 dark:border-slate-700">
+            <kbd className="shrink-0 ml-2 px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-900 text-[10px] font-mono text-slate-500 dark:text-slate-400 font-bold border border-slate-300 dark:border-slate-700 whitespace-nowrap">
               Ctrl + K
             </kbd>
           </button>
@@ -66,15 +61,6 @@ const Navbar = () => {
 
         {/* Right Actions */}
         <div className="flex items-center gap-3">
-          {/* Access Center Link */}
-          <button
-            onClick={() => navigate('/access-center')}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold transition-all border border-slate-200 dark:border-slate-750"
-            title="Open Universal System Access Center"
-          >
-            <Compass size={15} className="text-purple-500" />
-            <span>Access Center</span>
-          </button>
 
           {/* AI Copilot Drawer Trigger */}
           <button
@@ -99,14 +85,8 @@ const Navbar = () => {
             <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />
           </button>
 
-          <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
-            <div className="h-8 w-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-xs font-semibold">
-              {user?.name?.slice(0, 2).toUpperCase() ?? 'US'}
-            </div>
-            <div className="hidden sm:block text-sm">
-              <p className="font-medium text-slate-700 dark:text-slate-200 leading-none">{user?.name ?? 'Guest'}</p>
-              <p className="text-xs text-slate-400">{user?.role ?? 'OPERATOR'}</p>
-            </div>
+          <div className="pl-2 border-l border-slate-200 dark:border-slate-800">
+            <UserProfileMenu />
           </div>
         </div>
       </header>

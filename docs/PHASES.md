@@ -1,7 +1,7 @@
 # IRISYN — Platform Development Roadmap & Phases
 
 ## 1. Overview
-IRISYN is an AI-powered Digital Twin and Predictive Operations Platform built around the core operating paradigm **SEE • PREDICT • ACT**.
+IRISYN is an AI-powered Digital Twin and Predictive Operations Platform.
 
 Development progresses across 8 sequential, dependency-ordered phases. Phase dependencies are strict: foundation and data infrastructure must precede advanced analytics and cloud scaling.
 

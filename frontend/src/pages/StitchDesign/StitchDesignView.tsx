@@ -16,7 +16,7 @@ export const StitchDesignView: React.FC = () => {
   return (
     <DashboardLayout
       title="Stitch Design Studio (15112896591399027842)"
-      description="SEE • PREDICT • ACT — High-Fidelity IRISYN Operations & Digital Twin Multi-View Design Suite"
+      description="High-Fidelity IRISYN Operations & Digital Twin Multi-View Design Suite"
     >
       <div className="space-y-4">
         {/* Top Action & Status Bar */}

@@ -28,6 +28,9 @@ import AccessCenter from './pages/Access/AccessCenter';
 import DeploymentView from './pages/Deployment/DeploymentView';
 import IndustrialView from './pages/Industrial/IndustrialView';
 import StitchDesignView from './pages/StitchDesign/StitchDesignView';
+import Servers from './pages/Servers/Servers';
+import VirtualMachines from './pages/VirtualMachines/VirtualMachines';
+import Containers from './pages/Containers/Containers';
 
 const App = () => {
   return (
@@ -41,6 +44,9 @@ const App = () => {
               <Route path="/stitch-design" element={<StitchDesignView />} />
               <Route path="/access-center" element={<AccessCenter />} />
               <Route path="/copilot" element={<CopilotConsole />} />
+              <Route path="/servers" element={<Servers />} />
+              <Route path="/virtual-machines" element={<VirtualMachines />} />
+              <Route path="/containers" element={<Containers />} />
               <Route path="/assets" element={<AssetList />} />
               <Route path="/assets/:id" element={<AssetDetail />} />
               <Route path="/digital-twin" element={<DigitalTwinView />} />

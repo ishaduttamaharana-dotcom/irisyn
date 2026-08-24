@@ -20,7 +20,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-@Path("/api")
+@Path("/api/intelligence")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "Intelligence Engine API")
@@ -39,7 +39,7 @@ public class IntelligenceResource {
     PredictionEngine predictionEngine;
 
     @GET
-    @Path("/intelligence/overview")
+    @Path("/overview")
     @Operation(summary = "Get high-level intelligence summary overview")
     public Response getOverview() {
         List<AssetDto> assets = digitalTwinEngine.getAllAssets("ALL");
@@ -58,7 +58,7 @@ public class IntelligenceResource {
     }
 
     @GET
-    @Path("/intelligence/risk-ranking")
+    @Path("/risk-ranking")
     @Operation(summary = "Get fleet assets ranked by failure probability risk vector")
     public Response getRiskRanking() {
         List<AssetDto> assets = digitalTwinEngine.getAllAssets("ALL");
@@ -79,7 +79,7 @@ public class IntelligenceResource {
     }
 
     @GET
-    @Path("/intelligence/health-ranking")
+    @Path("/health-ranking")
     @Operation(summary = "Get fleet assets ranked by deterministic health score")
     public Response getHealthRanking() {
         List<AssetDto> assets = digitalTwinEngine.getAllAssets("ALL");

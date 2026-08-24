@@ -121,7 +121,7 @@ public class LocalTelemetryCollector implements TelemetryCollector {
 
         // Data Quality Metadata
         event.quality = new DataQualityDto(true, 0, 100.0, "GOOD");
-        event.quality.latencyMs = m.networkLatencyMs;
+        event.quality.latencyMs = (long) m.networkLatencyMs;
 
         return event;
     }

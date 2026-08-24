@@ -12,7 +12,9 @@ public class CopilotResponseDto {
     public String risk;
     public String recommendation;
     public List<String> dataSourcesUsed; // REAL-TIME LOCAL, SIMULATED, TARGET / FUTURE
-    public String confidence;            // CONFIRMED, LIKELY, POSSIBLE
+    public String confidence;            // CONFIRMED, LIKELY, POSSIBLE, UNKNOWN, INSUFFICIENT_EVIDENCE
+    public com.bpp.digitaltwin.copilot.CopilotMode mode; // CHAT_MODE, INVESTIGATION_MODE, REPORT_MODE, ACTION_MODE
+    public Map<String, Object> troubleshootingReport; // Standardized Troubleshooting report for Investigation Mode
 
     // Data-First Validation & Attribution
     public String freshnessStatus;       // LIVE, STALE, OFFLINE

@@ -71,4 +71,26 @@ public class CopilotCalculationEngine {
             "sampleCount", samples != null ? samples.size() : 0
         );
     }
+
+    public static class CalculationResult {
+        public int sampleCount;
+        public double avg;
+        public double min;
+        public double max;
+        public double stddev;
+        public String trend;
+        public double pctChange;
+
+        public CalculationResult() {}
+
+        public CalculationResult(int sampleCount, double avg, double min, double max, double stddev, String trend, double pctChange) {
+            this.sampleCount = sampleCount;
+            this.avg = avg;
+            this.min = min;
+            this.max = max;
+            this.stddev = stddev;
+            this.trend = trend;
+            this.pctChange = pctChange;
+        }
+    }
 }

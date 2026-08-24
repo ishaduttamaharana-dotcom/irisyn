@@ -18,7 +18,7 @@ const Settings = () => {
 
   // Form states
   const [platformName, setPlatformName] = useState('IRISYN');
-  const [tagline, setTagline] = useState('SEE • PREDICT • ACT');
+  const [tagline, setTagline] = useState('Digital Twin Platform');
   const [intervalSec, setIntervalSec] = useState('1');
   const [weights, setWeights] = useState<Record<string, number>>({ cpu: 20, thermal: 20, ram: 15, disk: 15, anomaly: 20, availability: 10 });
   const [saveSuccess, setSaveSuccess] = useState(false);

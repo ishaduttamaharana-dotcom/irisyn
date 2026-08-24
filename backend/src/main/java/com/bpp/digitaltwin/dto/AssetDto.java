@@ -21,6 +21,7 @@ public class AssetDto {
     public Map<String, Integer> healthBreakdown;
     public double operatingHours;
     public long stateVersion;       // Monotonically incremented counter on meaningful state changes
+    public String twinVersion = "v2.4";
     public TelemetryMetricsDto metrics;
     public DataQualityDto quality;
     public String lastUpdated;

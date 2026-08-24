@@ -1,6 +1,6 @@
 # IRISYN Copilot Technical Specification & AI Architecture
 
-## Tagline: SEE • PREDICT • ACT
+## Digital Twin Engineering Copilot
 
 ---
 

@@ -70,10 +70,15 @@ public class AuditResource {
 
         AuditLogEntity log = new AuditLogEntity();
         log.action = action;
-        log.resourceId = resourceId;
-        log.performedBy = performedBy;
-        log.role = role;
+        log.resource = resourceId;
+        log.username = performedBy;
+        try {
+            log.userRole = com.bpp.digitaltwin.entity.UserRole.valueOf(role.toUpperCase());
+        } catch (Exception e) {
+            log.userRole = com.bpp.digitaltwin.entity.UserRole.OPERATOR;
+        }
         log.details = details;
+        log.outcome = "SUCCESS";
         log.timestamp = Instant.now();
         log.persist();
 

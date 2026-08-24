@@ -1,6 +1,6 @@
 # IRISYN Phase 7 — Production Deployment Readiness Audit Report
 
-**System Name**: IRISYN — Data Center Digital Twin & Predictive Operations Platform ("SEE • PREDICT • ACT")  
+**System Name**: IRISYN — Data Center Digital Twin & Predictive Operations Platform  
 **Target Environment**: PRODUCTION / DEMO  
 **Audit Date**: 2026-08-13  
 **Status**: APPROVED / PRODUCTION READY  

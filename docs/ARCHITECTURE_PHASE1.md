@@ -1,7 +1,7 @@
 # IRISYN — Phase 1: Architecture & Cleanup
 
 ## 1. Overview
-IRISYN is an AI-powered Digital Twin and Predictive Operations Platform designed around the core paradigm **SEE • PREDICT • ACT**.
+IRISYN is an AI-powered Digital Twin and Predictive Operations Platform.
 
 Phase 1 establishes a clean, modular, API-driven platform foundation that separates frontend and backend responsibilities, eliminates hardcoded demo data from views, enforces data source categorization, standardizes shared UI states, and prepares the system for scale and future edge/industrial integrations.
 

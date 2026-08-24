@@ -50,7 +50,9 @@ public class CopilotEngine {
 
         String rawQ = query.question != null ? query.question.trim() : "";
 
-        // 1. DATA GATE CLASSIFICATION
+        // 1. DATA GATE & MODE RESOLUTION
+        CopilotMode mode = dataGate.resolveMode(rawQ, query);
+        response.mode = mode;
         Set<CopilotQueryCategory> categories = dataGate.classifyQuery(rawQ);
         boolean requiresLiveData = dataGate.requiresLiveData(rawQ);
 
@@ -59,53 +61,84 @@ public class CopilotEngine {
         String resolvedMetric = metricResolver.resolveMetric(rawQ, "ALL");
         CopilotTimeResolver.TimeRangeResult timeRes = timeResolver.resolveTimeRange(rawQ);
 
-        // Ambiguity Check
-        if (entityRes.ambiguous) {
+        String targetAssetId = entityRes.resolvedAssetId != null ? entityRes.resolvedAssetId : query.activeAssetId;
+        if (targetAssetId == null && !entityRes.ambiguous) {
+            targetAssetId = "FLEET";
+        }
+
+        // Missing Data / Nonexistent Asset Check for Specific Investigation
+        if (targetAssetId != null && !"FLEET".equalsIgnoreCase(targetAssetId) && toolRouter.getAsset(targetAssetId) == null) {
+            response.answer = "I don't have enough data to determine that.";
+            response.confidence = "INSUFFICIENT_EVIDENCE";
+            response.freshnessStatus = "OFFLINE";
+            return response;
+        }
+
+        // Ambiguity Check (when multiple valid candidate assets match generic terms)
+        if (entityRes.ambiguous && targetAssetId == null) {
             response.answer = "Which asset twin would you like me to inspect?";
             response.evidence = entityRes.candidates;
             response.confidence = "POSSIBLE";
             return response;
         }
 
-        String targetAssetId = entityRes.resolvedAssetId != null ? entityRes.resolvedAssetId : "FLEET";
+        if (targetAssetId == null) {
+            targetAssetId = "FLEET";
+        }
 
         // 3. ACTION INTENT (Requires Confirmation)
-        if (categories.contains(CopilotQueryCategory.ACTION)) {
-            return buildActionConfirmationResponse(rawQ, targetAssetId);
+        if (mode == CopilotMode.ACTION_MODE || categories.contains(CopilotQueryCategory.ACTION)) {
+            CopilotResponseDto actRes = buildActionConfirmationResponse(rawQ, targetAssetId);
+            actRes.mode = mode;
+            return actRes;
         }
 
-        // 4. COMPARISON INTENT
-        if (categories.contains(CopilotQueryCategory.COMPARISON)) {
-            return handleComparisonQuery(response, rawQ);
+        // 4. COMPARISON INTENT / REPORT MODE
+        if (mode == CopilotMode.REPORT_MODE || categories.contains(CopilotQueryCategory.COMPARISON)) {
+            CopilotResponseDto repRes = handleComparisonQuery(response, rawQ);
+            repRes.mode = mode;
+            return repRes;
         }
 
-        // 5. TREND & AGGREGATION INTENT
+        // 5. HEALTH / INVESTIGATION INTENT (Prioritized for Investigation Mode or "why" or specific asset diagnostic)
+        if (mode == CopilotMode.INVESTIGATION_MODE || categories.contains(CopilotQueryCategory.HEALTH) || rawQ.contains("why")) {
+            CopilotResponseDto invRes = handleWhyAssetUnhealthyQuery(response, targetAssetId);
+            invRes.mode = mode;
+            return invRes;
+        }
+
+        // 6. TREND & AGGREGATION INTENT
         if (categories.contains(CopilotQueryCategory.TREND) || categories.contains(CopilotQueryCategory.AGGREGATION) || rawQ.contains("last")) {
-            return handleHistoricalTrendQuery(response, targetAssetId, resolvedMetric, timeRes);
+            CopilotResponseDto trendRes = handleHistoricalTrendQuery(response, targetAssetId, resolvedMetric, timeRes);
+            trendRes.mode = mode;
+            return trendRes;
         }
 
-        // 6. UNHEALTHY / ABNORMAL INTENT
+        // 7. FLEET UNHEALTHY / ABNORMAL LIST INTENT
         if (rawQ.contains("unhealthy") || rawQ.contains("abnormal") || rawQ.contains("worst") || rawQ.contains("critical")) {
-            return handleUnhealthyAssetsQuery(response);
-        }
-
-        // 7. HEALTH / WHY DECREASED INTENT
-        if (categories.contains(CopilotQueryCategory.HEALTH) || rawQ.contains("why")) {
-            return handleWhyAssetUnhealthyQuery(response, targetAssetId);
+            CopilotResponseDto unhRes = handleUnhealthyAssetsQuery(response);
+            unhRes.mode = mode;
+            return unhRes;
         }
 
         // 8. TELEMETRY / SYSTEM STATUS INTENT
         if (categories.contains(CopilotQueryCategory.SYSTEM_STATUS)) {
-            return handleSystemTelemetryStatusQuery(response);
+            CopilotResponseDto sysRes = handleSystemTelemetryStatusQuery(response);
+            sysRes.mode = mode;
+            return sysRes;
         }
 
         // 9. SPECIFIC ASSET DIAGNOSIS
         if (entityRes.resolvedAssetId != null) {
-            return handleSpecificAssetDiagnosis(response, entityRes);
+            CopilotResponseDto specRes = handleSpecificAssetDiagnosis(response, entityRes);
+            specRes.mode = mode;
+            return specRes;
         }
 
-        // Default Overview Intent
-        return handleSystemOverviewQuery(response);
+        // Default Overview Intent (Chat Mode)
+        CopilotResponseDto ovRes = handleSystemOverviewQuery(response);
+        ovRes.mode = mode;
+        return ovRes;
     }
 
     public Map<String, Object> executeAction(String action, String target, String scenario) {
@@ -267,8 +300,9 @@ public class CopilotEngine {
     private CopilotResponseDto handleWhyAssetUnhealthyQuery(CopilotResponseDto res, String assetId) {
         AssetDto asset = toolRouter.getAsset(assetId);
         if (asset == null) {
-            res.answer = "I don't have telemetry data for asset ID '" + assetId + "'.";
-            res.confidence = "POSSIBLE";
+            res.answer = "I don't have enough data to determine that.";
+            res.confidence = "INSUFFICIENT_EVIDENCE";
+            res.freshnessStatus = "OFFLINE";
             return res;
         }
 
@@ -304,6 +338,19 @@ public class CopilotEngine {
         res.freshnessStatus = val.status;
         res.freshnessSeconds = val.freshnessSeconds;
         res.dataUsedTrace = val.dataUsedTrace;
+
+        // Standardized Investigation Troubleshooting Report
+        Map<String, Object> report = new LinkedHashMap<>();
+        report.put("PROBLEM", asset.name + " (" + asset.id + ") health score reduced to " + asset.healthScore + "% (" + asset.status + ")");
+        report.put("ROOT_CAUSE", "Parameter drift: Thermal / Vibration overload in drive housing assembly.");
+        report.put("EVIDENCE", new ArrayList<>(res.evidence));
+        report.put("IMPACT", res.risk);
+        report.put("RECOMMENDED_FIX", res.recommendation);
+        report.put("VERIFICATION", "Confirm RMS vibration < 2.5 mm/s and temperature < 65.0°C post remediation.");
+        report.put("CONFIDENCE", res.confidence);
+        report.put("DATA_QUALITY", val.status + " (Source: " + asset.source + ")");
+
+        res.troubleshootingReport = report;
 
         return res;
     }

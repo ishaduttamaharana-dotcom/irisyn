@@ -289,7 +289,7 @@ export const mockRbacMatrix: RbacMatrixRow[] = [
 
 export const mockSystemConfig: SystemConfigOverview = {
   platformName: 'IRISYN Industrial Digital Twin Platform',
-  tagline: 'SEE • PREDICT • ACT',
+  tagline: 'Digital Twin Platform',
   environment: 'Local Workstation & Cloud Twin Hybrid',
   defaultMode: 'SIMULATED + LOCAL HARDWARE',
   timezone: 'UTC+05:30',

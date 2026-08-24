@@ -1,6 +1,6 @@
 # IRISYN AI & Machine Learning Strategy
 
-## Tagline: SEE • PREDICT • ACT
+## Digital Twin Platform
 
 ---
 

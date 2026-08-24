@@ -1,6 +1,6 @@
 # IRISYN System Architecture & Engineering Blueprint
 
-## Tagline: SEE • PREDICT • ACT
+## Digital Twin Platform Architecture
 
 ---
 

@@ -19,9 +19,11 @@ public class DeploymentReliabilityTest {
     BackupEngine backupEngine;
 
     @Inject
+    @org.eclipse.microprofile.health.Liveness
     LivenessHealthCheck livenessProbe;
 
     @Inject
+    @org.eclipse.microprofile.health.Readiness
     ReadinessHealthCheck readinessProbe;
 
     @Test

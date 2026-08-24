@@ -25,7 +25,7 @@ public class SystemConfigService {
     public SystemConfigService() {
         // Safe Default Configurations
         inMemoryConfig.put("system.platformName", "IRISYN");
-        inMemoryConfig.put("system.tagline", "SEE • PREDICT • ACT");
+        inMemoryConfig.put("system.tagline", "Digital Twin Platform");
         inMemoryConfig.put("system.environment", "DEMO / DEVELOPMENT");
         inMemoryConfig.put("system.defaultMode", "HYBRID");
         inMemoryConfig.put("system.timezone", "Asia/Kolkata");
@@ -96,7 +96,7 @@ public class SystemConfigService {
     public Map<String, Object> getAllConfigs() {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("platformName", getConfig("system.platformName", "IRISYN"));
-        result.put("tagline", getConfig("system.tagline", "SEE • PREDICT • ACT"));
+        result.put("tagline", getConfig("system.tagline", "Digital Twin Platform"));
         result.put("environment", getConfig("system.environment", "DEMO / DEVELOPMENT"));
         result.put("defaultMode", getConfig("system.defaultMode", "HYBRID"));
         result.put("timezone", getConfig("system.timezone", "Asia/Kolkata"));

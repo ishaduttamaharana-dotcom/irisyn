@@ -67,7 +67,7 @@ const Dashboard = () => {
   return (
     <DashboardLayout
       title="Predictive Operations Center"
-      description="SEE • PREDICT • ACT — AI-Powered Digital Twin & Operational Intelligence Platform"
+      description="AI-Powered Digital Twin & Operational Intelligence Platform"
     >
       <div className="space-y-6">
         <SimulationControlBar onScenarioChange={handleRetry} />

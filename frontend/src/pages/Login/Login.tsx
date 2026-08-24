@@ -6,7 +6,7 @@ const Login = () => {
   const navigate = useNavigate();
 
   const handleLogin = () => {
-    login({ id: 'u-1', name: 'Isha', role: 'ADMIN' });
+    login({ id: 'u-1', name: 'Isha', email: 'isha@irisyn.local', role: 'ADMIN' });
     navigate('/');
   };
 
